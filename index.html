@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Missões</title>
+<meta name="description" content="Atividades de alfabetização, matemática, raciocínio, inglês e ciências para crianças do 1º ano.">
+<meta name="theme-color" content="#2559C9">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icones/icone-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icones/icone-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Missões">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <span class="brand"><img src="icones/icone-192.png" alt=""> <span id="marca">Missões</span></span>
+    <span class="topspace"></span>
+    <button class="chip" id="btn-trocar" type="button" hidden>Trocar de criança</button>
+    <button class="chip" id="btn-letra" type="button" hidden>AA letra</button>
+    <button class="chip" id="btn-pais" type="button"><span class="sinal" id="sinal"></span> Adultos</button>
+  </div>
+
+  <!-- ============ ESCOLHER CRIANÇA ============ -->
+  <div id="tela-perfis">
+    <div class="escolher">
+      <h1>Quem vai estudar hoje?</h1>
+      <p id="perfis-sub">Toque no seu foguete para começar.</p>
+      <div class="perfis" id="perfis"></div>
+    </div>
+  </div>
+
+  <!-- ============ CRIANÇA ============ -->
+  <div id="kid" class="bastao" hidden>
+
+    <div id="tela-home">
+      <div class="hero">
+        <div class="foguete" id="h-foguete">🚀</div>
+        <div class="txt">
+          <h1 class="kt" id="h-ola">Vamos lá!</h1>
+          <p class="kt" id="h-hoje"></p>
+          <div class="barra-nivel">
+            <div class="tk"><i id="h-fill"></i></div>
+            <div class="lg"><span id="h-nivel">Foguete nível 1</span><span id="h-prox"></span></div>
+          </div>
+          <div class="medalhas" id="h-medalhas"></div>
+        </div>
+      </div>
+      <div class="tally">
+        <div><b id="k-hoje">0</b><span>hoje</span></div>
+        <div><b id="k-estrelas">0</b><span>estrelas</span></div>
+        <div><b id="k-seq">0</b><span>dias seguidos</span></div>
+        <div><b id="k-total">0</b><span>no total</span></div>
+      </div>
+      <div class="missoes" id="missoes"></div>
+    </div>
+
+    <div id="tela-missao" hidden>
+      <div class="mtop">
+        <button class="xbtn" id="sair" type="button" aria-label="Voltar">✕</button>
+        <div class="dots" id="dots"></div>
+        <span class="cnt" id="cnt"></span>
+      </div>
+      <div class="qcard" id="qcard"></div>
+    </div>
+
+    <div id="tela-fim" hidden>
+      <div class="fim">
+        <div class="estrelas" id="f-estrelas">★★★</div>
+        <h2 class="kt" id="f-msg">Muito bem!</h2>
+        <div class="placar" id="f-placar"></div>
+        <div class="subiu kt" id="f-subiu" hidden></div>
+        <div class="acoes">
+          <button class="btn" id="f-pai" type="button" style="--acc:var(--voz)">Chamar o adulto</button>
+          <button class="btn sec" id="f-voltar" type="button">Voltar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tela-aval" hidden>
+      <div class="pai">
+        <h2>Avaliação do adulto</h2>
+        <p class="lead" id="aval-ctx"></p>
+        <div class="campo">
+          <label>Fez sozinho?</label>
+          <div class="escolhas" id="e-autonomia">
+            <button type="button" data-v="3">Sozinho</button>
+            <button type="button" data-v="2">Com uma ajudinha</button>
+            <button type="button" data-v="1">Precisou de muita ajuda</button>
+          </div>
+        </div>
+        <div class="campo">
+          <label>Como ficou a concentração?</label>
+          <div class="escolhas" id="e-foco">
+            <button type="button" data-v="3">Focado até o fim</button>
+            <button type="button" data-v="2">Oscilou</button>
+            <button type="button" data-v="1">Muito disperso</button>
+          </div>
+        </div>
+        <div class="campo" id="campo-fluencia" hidden>
+          <label>Como foi a leitura em voz alta?</label>
+          <div class="escolhas" id="e-fluencia">
+            <button type="button" data-v="3">Leu corrido</button>
+            <button type="button" data-v="2">Leu soletrando</button>
+            <button type="button" data-v="1">Travou em várias palavras</button>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="obs">Observação (opcional)</label>
+          <textarea id="obs" placeholder="Ex.: travou nas palavras com LH, mas acertou todas as somas."></textarea>
+        </div>
+        <div class="acoes">
+          <button class="btn" id="aval-salvar" type="button" style="--acc:var(--voz)">Salvar avaliação</button>
+          <button class="btn sec" id="aval-pular" type="button">Avaliar depois</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PIN ============ -->
+  <div id="tela-pin" hidden>
+    <div class="pai">
+      <h2>Área dos adultos</h2>
+      <p class="lead">Digite o PIN de 4 números para entrar.</p>
+      <div class="pin">
+        <input type="password" id="pin-in" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••">
+        <button class="btn" id="pin-ok" type="button" style="--acc:var(--voz)">Entrar</button>
+        <button class="btn sec" id="pin-volta" type="button">Voltar</button>
+      </div>
+      <div class="aviso" id="pin-aviso"></div>
+    </div>
+  </div>
+
+  <!-- ============ ADULTOS ============ -->
+  <div id="tela-pais" class="painel" hidden>
+    <h2>Acompanhamento</h2>
+    <p class="lead">Os acertos vêm das respostas das crianças; as notas de autonomia e concentração vêm das avaliações de vocês. A seção <b>o que reforçar</b> é o que deve guiar a semana.</p>
+
+    <div class="abas" id="abas-criancas"></div>
+    <div id="pendentes"></div>
+    <div id="conteudo-crianca"></div>
+
+    <h3>Relatório da semana</h3>
+    <div id="relatorio"></div>
+
+    <h3>Crianças</h3>
+    <div class="lista-perfis" id="lista-perfis"></div>
+    <button class="chip" id="add-crianca" type="button">+ Adicionar criança</button>
+
+    <div class="caixa">
+      <h4>Sincronizar entre aparelhos</h4>
+      <p id="sync-txt">Sem sincronização: os dados ficam só neste aparelho.</p>
+      <div id="sync-area"></div>
+      <div class="aviso" id="sync-aviso"></div>
+    </div>
+
+    <div class="caixa">
+      <h4>Ajustes</h4>
+      <div class="campo">
+        <label for="cfg-pin">PIN da área dos adultos (4 números)</label>
+        <div class="pin"><input type="text" id="cfg-pin" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+      </div>
+      <div class="acoes">
+        <button class="chip" id="exp" type="button">Salvar histórico em arquivo</button>
+        <label class="chip" for="imp" style="cursor:pointer">Abrir arquivo de histórico</label>
+        <input type="file" id="imp" accept="application/json,.json" hidden>
+      </div>
+      <div class="aviso" id="arq-aviso"></div>
+    </div>
+
+    <div class="rodape">
+      <button class="danger" id="limpar" type="button">Apagar todo o histórico</button>
+      <span id="versao"></span>
+    </div>
+  </div>
+
+  <!-- ============ EDITAR CRIANÇA ============ -->
+  <div id="tela-crianca" hidden>
+    <div class="pai">
+      <h2 id="cr-titulo">Nova criança</h2>
+      <p class="lead">O nome aparece na tela inicial e o bichinho é o jeito dela se reconhecer.</p>
+      <div class="campo">
+        <label for="cr-nome">Nome</label>
+        <input type="text" id="cr-nome" maxlength="18" autocomplete="off" placeholder="ex.: Miguel">
+      </div>
+      <div class="campo">
+        <label>Escolha um avatar</label>
+        <div class="avatares" id="cr-avatares"></div>
+      </div>
+      <div class="campo">
+        <label for="cr-letra">Tipo de letra</label>
+        <select id="cr-letra">
+          <option value="bastao">LETRA BASTÃO (maiúscula)</option>
+          <option value="imprensa">letra de imprensa escolar</option>
+        </select>
+      </div>
+      <div class="acoes">
+        <button class="btn" id="cr-salvar" type="button" style="--acc:var(--voz)">Salvar</button>
+        <button class="btn sec" id="cr-voltar" type="button">Cancelar</button>
+        <button class="danger" id="cr-apagar" type="button" hidden>Remover esta criança</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/questoes.js"></script>
+<script src="config.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/app.js"></script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+}
+</script>
+</body>
+</html>
