@@ -3,8 +3,9 @@
 App para crianças de 6 a 8 anos praticarem leitura, matemática, raciocínio, inglês e ciências.
 A criança faz as atividades sozinha; o adulto avalia no fim e acompanha o desempenho num painel.
 
-São 70 habilidades, cada uma em 3 níveis que se ajustam sozinhos ao ritmo da criança, com revisão
-espaçada do que ela errou e explicação em toda resposta errada.
+São 70 habilidades e mais de 100 mil perguntas diferentes, cada habilidade em 3 níveis que se
+ajustam sozinhos ao ritmo da criança, com revisão espaçada do que ela errou e explicação em toda
+resposta errada.
 
 Funciona no computador e no celular, instala como aplicativo e roda offline. Não tem anúncio,
 não tem compra, não manda dado nenhum para lugar nenhum — a não ser que você ligue a sincronização
@@ -155,6 +156,13 @@ Com 3 alternativas a criança acerta 1 em 3 chutando, sem ler. Por isso o app te
 Repare no pulo: no nível 3 de Soma ela não escolhe mais entre três números, ela **calcula e digita**.
 É outra tarefa mental — e é exatamente a diferença entre reconhecer e saber.
 
+**Treinar uma habilidade específica**
+
+Saber o que está travando só ajuda se der para agir. Em **Adultos**, na seção *o que reforçar*,
+cada habilidade fraca tem um botão **Treinar isso ▸**. Ele abre na hora uma missão de 8 perguntas
+só daquela habilidade, no nível atual da criança. Vale como atividade normal e aparece no histórico
+marcada como treino.
+
 **Explicação quando erra**
 
 Toda pergunta tem um "por quê". Quando a criança erra, além de acender a resposta certa o app mostra
@@ -183,6 +191,7 @@ inclusive a voz — útil em sala de espera, ônibus ou na hora de dormir.
 | Trocar o PIN dos adultos | dentro do app, em Adultos → Ajustes |
 | Mudar entre LETRA BASTÃO e letra escolar | botão no topo, por criança |
 | Adicionar ou remover crianças | Adultos → Crianças |
+| Treinar uma habilidade específica | Adultos → o que reforçar → **Treinar isso** |
 | Mudar a meta de missões por dia | dentro do app, em Adultos → Crianças |
 | Ligar e desligar os sons | botão 🔊 no topo |
 | Acrescentar palavras, contas ou perguntas | `js/questoes.js` |

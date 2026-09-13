@@ -518,6 +518,35 @@ function montarMissao(area,perfil){
   return shuffle(out);
 }
 
+/* Missão de treino: 8 perguntas só de uma habilidade, aberta pelo adulto
+   a partir do painel. Vale como atividade normal no histórico. */
+function abrirTreino(tag,perfilId){
+  var p=acharPerfil(perfilId), t=Q.porTag[tag];
+  if(!p||!t) return;
+  atualPerfil=p;
+  dados.cfg.ultimo=p.id;
+  $("kid").classList.toggle("bastao",(p.letra||"bastao")==="bastao");
+  $("btn-letra").textContent = (p.letra||"bastao")==="bastao" ? "AA letra bastão" : "Aa letra escolar";
+
+  pararAvanco(); pararContagem();
+  var nv=nivelDe(p,tag), qs=[], usados={}, voltas=0;
+  while(qs.length<NQ && voltas++<400){
+    var q=Q.gerar(tag,nv);
+    if(!q) break;
+    var chave=assinatura(q);
+    /* depois de muitas voltas aceita repetir: algumas habilidades têm
+       poucas perguntas distintas e é melhor treinar do que desistir */
+    if(usados[chave] && voltas<200) continue;
+    usados[chave]=1;
+    qs.push(q);
+  }
+  if(!qs.length){ pintarPais(); mostrar("tela-pais"); return; }
+  atual={area:t.area,tipo:"treino",treino:tag,qs:qs,i:0,acertos:0,tags:{},inicio:Date.now()};
+  $("tela-missao").style.setProperty("--acc","var(--"+t.area+")");
+  mostrar("tela-missao");
+  pintarQuestao();
+}
+
 function abrirMissao(area){
   pararAvanco(); pararContagem();
   var qs=montarMissao(area,atualPerfil);
@@ -864,7 +893,7 @@ function terminar(){
   var estrelas = atual.tipo==="voz" ? 2 : (atual.acertos>=total-1?3:(atual.acertos>=Math.ceil(total*0.6)?2:1));
   var s={
     id:uid(), perfil:atualPerfil.id, ts:Date.now(), dia:hojeISO(),
-    area:atual.area, tipo:atual.tipo, acertos:atual.acertos, total:total, seg:seg,
+    area:atual.area, tipo:atual.tipo, treino:atual.treino||"", acertos:atual.acertos, total:total, seg:seg,
     estrelas:estrelas, tags:atual.tags, texto:atual.texto||"", nivel:atual.nivel||1,
     autonomia:null, foco:null, fluencia:null, obs:"", avaliador:"",
     atualizado:Date.now()
@@ -886,7 +915,8 @@ function terminar(){
     msg="Você leu tudo!"; placar="Agora chame um adulto para dizer como foi.";
   }else{
     msg = atual.acertos>=total-1?"Uau, quase tudo certo!":(atual.acertos>=Math.ceil(total*0.6)?"Muito bem!":"Bom trabalho! Vamos treinar mais.");
-    placar="Você acertou "+atual.acertos+" de "+total+" · "+fmtT(seg);
+    placar=(atual.treino?("Treino de "+atual.treino.toLowerCase()+" · "):"")+
+      "Você acertou "+atual.acertos+" de "+total+" · "+fmtT(seg);
   }
   $("f-msg").textContent=msg;
   $("f-placar").textContent=placar;
@@ -1079,15 +1109,26 @@ function pintarConteudo(){
     host.appendChild(el("div","vazio","Depois de 3 ou 4 atividades aparece aqui exatamente qual habilidade está travando — sílabas, subtração, memória, cores em inglês e assim por diante."));
   }else{
     var g=el("div","reforcar");
+    var alvo = abaAtual==="todos" ? null : acharPerfil(abaAtual);
     (fracos.length?fracos:fortes).forEach(function(x){
       var d=el("div","rf"+(x.pc>=75?" bom":""));
       d.appendChild(el("b",null,x.nome));
       var s=el("span");
-      s.innerHTML='<span class="pc">'+x.pc+'%</span> de acerto · '+x.tot+' tentativas · '+(NOME_AREA[x.area]||"");
+      s.appendChild(el("span","pc",x.pc+"%"));
+      s.appendChild(document.createTextNode(" de acerto · "+x.tot+" tentativas · "+(NOME_AREA[x.area]||"")));
       d.appendChild(s);
+      /* fecha o ciclo: saber o que está travando só ajuda se der para treinar aquilo */
+      if(alvo && Q.porTag[x.nome]){
+        var b=el("button","chip mini treinar","Treinar isso ▸"); b.type="button";
+        b.title="Abrir uma missão só de "+x.nome+" para "+alvo.nome;
+        b.addEventListener("click",function(){ abrirTreino(x.nome,alvo.id); });
+        d.appendChild(b);
+      }
       g.appendChild(d);
     });
     host.appendChild(g);
+    if(!alvo && (fracos.length||fortes.length))
+      host.appendChild(el("div","vazio","Escolha uma criança nas abas acima para poder treinar uma habilidade direto daqui."));
     if(!fracos.length) host.insertBefore(el("div","vazio","Nada abaixo de 75%. Está indo bem — o nível das questões já sobe sozinho conforme ele acerta."),g);
   }
 
@@ -1121,7 +1162,7 @@ function pintarConteudo(){
     var tr=el("tr"), d=new Date(s.ts), p=acharPerfil(s.perfil);
     tr.appendChild(td(d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),true));
     if(abaAtual==="todos") tr.appendChild(td(p?(p.avatar+" "+p.nome):"—"));
-    tr.appendChild(td(NOME_AREA[s.area]||s.area));
+    tr.appendChild(td(s.treino ? ("treino: "+s.treino) : (NOME_AREA[s.area]||s.area)));
     tr.appendChild(td(s.tipo==="voz"?"—":(s.acertos+"/"+s.total),true));
     tr.appendChild(td(Math.floor(s.seg/60)+":"+String(s.seg%60).padStart(2,"0"),true));
     tr.appendChild(td(s.autonomia?["","muita ajuda","ajudinha","sozinho"][s.autonomia]:"—"));

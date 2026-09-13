@@ -245,7 +245,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 .track{height:9px;background:var(--surface-2);border-radius:99px;overflow:hidden}
 .track i{display:block;height:100%;border-radius:99px;background:var(--acc);transition:width .4s ease}
 .reforcar{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:9px}
-.rf{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--quase);border-radius:12px;padding:10px 12px}
+.rf{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--quase);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
 .rf.bom{border-left-color:var(--ok)}
 .rf b{display:block;font-size:.96rem}
 .rf span{font-size:.82rem;color:var(--ink-soft)}
@@ -458,3 +458,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
   .peca{font-size:1.2rem;padding:10px 13px}
   .tecla{min-height:56px;font-size:1.4rem}
 }
+
+/* botão de treinar dentro do cartão "o que reforçar" */
+.rf .treinar{margin-top:9px;align-self:flex-start;border-color:var(--leitura);color:var(--leitura)}
+.rf .treinar:hover{background:var(--leitura);color:#fff;border-color:var(--leitura)}

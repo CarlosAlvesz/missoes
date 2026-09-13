@@ -200,7 +200,15 @@ var FRASES={
     {f:"o peixe nada na água",ok:"🐟",d:["🐦","🐇"]},
     {f:"eu visto a bota",ok:"👢",d:["🧢","🧤"]},
     {f:"a lua sai à noite",ok:"🌙",d:["☀️",  "🌈"]},
-    {f:"o pão está na mesa",ok:"🍞",d:["🍫","🥗"]}],
+    {f:"o pão está na mesa",ok:"🍞",d:["🍫","🥗"]},
+    {f:"o gato dorme",ok:"😴",d:["🏃","🍽️"]},
+    {f:"a menina pula",ok:"🤸",d:["😴","🛁"]},
+    {f:"eu tomo leite",ok:"🥛",d:["🧃","☕"]},
+    {f:"o cão corre",ok:"🐕",d:["🐢","🐌"]},
+    {f:"a flor é bonita",ok:"🌷",d:["🪨","🧦"]},
+    {f:"o peixe é azul",ok:"🐟",d:["🐓","🐛"]},
+    {f:"a casa é grande",ok:"🏠",d:["🐜","🔑"]},
+    {f:"eu gosto de bolo",ok:"🎂",d:["🧅","🧂"]}],
  2:[{f:"o gato subiu no telhado",ok:"🐱",d:["🐶","🐴"]},
     {f:"a abelha pousou na flor",ok:"🌻",d:["🌵","🍄"]},
     {f:"o papai dirige o carro",ok:"🚗",d:["🚲","✈️"]},
@@ -212,7 +220,15 @@ var FRASES={
     {f:"eu escovei os dentes antes de dormir",ok:"🪥",d:["🍿","🎮"]},
     {f:"o passarinho fez o ninho na árvore",ok:"🐦",d:["🐠","🐜"]},
     {f:"a formiga carregou a folha",ok:"🐜",d:["🐘","🦁"]},
-    {f:"o sorvete derreteu no sol",ok:"🍦",d:["🧊","🍞"]}],
+    {f:"o sorvete derreteu no sol",ok:"🍦",d:["🧊","🍞"]},
+    {f:"o menino leu um livro",ok:"📖",d:["⚽","🚲"]},
+    {f:"a chuva molhou a rua",ok:"🌧️",d:["🔥","🏜️"]},
+    {f:"o gato pulou o muro",ok:"🐱",d:["🐟","🐢"]},
+    {f:"a vovó plantou uma flor",ok:"🌻",d:["🚗","📺"]},
+    {f:"eu perdi o meu dente",ok:"🦷",d:["👟","🎈"]},
+    {f:"o papai lavou o carro",ok:"🚗",d:["🐕","🍕"]},
+    {f:"a professora contou uma história",ok:"📚",d:["🍔","⚽"]},
+    {f:"o passarinho cantou de manhã",ok:"🐦",d:["🐍","🐋"]}],
  3:[{f:"depois da chuva apareceu o arco-íris",ok:"🌈",d:["❄️","🔥"]},
     {f:"o menino esqueceu a mochila na escola",ok:"🎒",d:["🧦","🍿"]},
     {f:"a borboleta saiu do casulo e voou",ok:"🦋",d:["🐛","🐢"]},
@@ -222,7 +238,14 @@ var FRASES={
     {f:"o bombeiro apagou o fogo com a mangueira",ok:"🚒",d:["🚑","🚜"]},
     {f:"acordei cedo porque hoje é dia de passeio",ok:"⏰",d:["🌙","🛏️"]},
     {f:"a tartaruga andou devagar até chegar ao mar",ok:"🐢",d:["🐆","🦅"]},
-    {f:"o vulcão soltou fumaça e todos correram",ok:"🌋",d:["⛲","🏰"]}]
+    {f:"o vulcão soltou fumaça e todos correram",ok:"🌋",d:["⛲","🏰"]},
+    {f:"a formiga guardou comida para o inverno",ok:"🐜",d:["🦁","🐬"]},
+    {f:"meu time perdeu o jogo mas eu gostei de jogar",ok:"⚽",d:["🎹","🧹"]},
+    {f:"o pintinho quebrou a casca e saiu do ovo",ok:"🐣",d:["🐘","🦈"]},
+    {f:"plantei a semente e esperei a chuva chegar",ok:"🌱",d:["🧊","🔦"]},
+    {f:"o bombeiro subiu a escada para salvar o gato",ok:"🚒",d:["🚜","⛵"]},
+    {f:"a lua apareceu grande e redonda no céu",ok:"🌕",d:["🌵","🎺"]},
+    {f:"esqueci o guarda-chuva e cheguei todo molhado",ok:"☂️",d:["🧣","🕶️"]}]
 };
 
 /* ---------- contrários e parecidos ---------- */
@@ -427,7 +450,8 @@ var MAT=[
     ops:opsNum(falta,function(){return falta+rnd(-4,4);}),cols:3};
 }},
 {tag:"Sequência",area:"mat",fn:function(nv){
-  var passo=nv<=1?1:(nv===2?pick([2,5,10]):pick([3,4,25])), ini=passo*rnd(1,4);
+  var passo=nv<=1?1:(nv===2?pick([2,5,10]):pick([3,4,25]));
+  var ini=nv<=1?rnd(1,24):passo*rnd(1,6);
   var seq=[ini,ini+passo,ini+passo*2], certo=ini+passo*3;
   return {txt:"Qual número vem depois?",fala:"Qual número vem depois de "+seq.join(", ")+"?",
     porque:"A cada passo soma "+passo+". Depois de "+seq[2]+" vem "+certo+".",
@@ -450,7 +474,7 @@ var MAT=[
     ops:shuffle(set.map(function(n){return {t:String(n),ok:n===certo};})),cols:3};
 }},
 {tag:"Dobro e metade",area:"mat",fn:function(nv){
-  var dobro=Math.random()<0.5, teto=nv<=1?5:(nv===2?10:20);
+  var dobro=Math.random()<0.5, teto=nv<=1?8:(nv===2?15:30);
   var n=dobro?rnd(2,teto):rnd(1,teto)*2, certo=dobro?n*2:n/2;
   return {txt:(dobro?"O dobro de ":"A metade de ")+n+" é quanto?",fala:(dobro?"O dobro de ":"A metade de ")+n+" é quanto?",
     porque:dobro?(n+" + "+n+" = "+certo+"."):(certo+" + "+certo+" = "+n+", então a metade de "+n+" é "+certo+"."),
@@ -573,8 +597,17 @@ var MAT=[
 }},
 {tag:"Formas",area:"mat",fn:function(nv){
   var formas=[{n:"círculo",e:"⭕",l:0},{n:"quadrado",e:"🟦",l:4},{n:"triângulo",e:"🔺",l:3},
-    {n:"retângulo",e:"▬",l:4},{n:"estrela",e:"⭐",l:5},{n:"losango",e:"🔷",l:4},{n:"coração",e:"❤️",l:0}];
+    {n:"retângulo",e:"▬",l:4},{n:"estrela",e:"⭐",l:5},{n:"losango",e:"🔷",l:4},{n:"coração",e:"❤️",l:0},
+    {n:"pentágono",e:"⬟",l:5},{n:"hexágono",e:"⬢",l:6},{n:"cruz",e:"✚",l:12},{n:"seta",e:"➡️",l:7},
+    {n:"cubo",e:"🧊",l:12},{n:"bola",e:"⚽",l:0}];
   var f=pick(formas);
+  /* no nível 2, metade das vezes a pergunta é ao contrário: achar a forma pelo nome */
+  if(nv===2&&Math.random()<0.5){
+    var outrasF=pickN(formas.filter(function(x){return x.n!==f.n;}),2);
+    return {txt:"Qual destas é o "+f.n.toUpperCase()+"?",fala:"Qual destas figuras é o "+f.n+"?",
+      porque:"O "+f.n+" é esta: "+f.e,
+      ops:shuffle([{t:f.e,ok:true}].concat(outrasF.map(function(x){return {t:x.e,ok:false};}))),cols:3,emoji:true};
+  }
   if(nv>=3&&f.l>0){
     return {txt:"Quantos lados tem esta forma?",fala:"Quantos lados tem esta forma?",fig:f.e,figGrande:true,
       porque:"O "+f.n+" tem "+f.l+" lados.",
@@ -595,7 +628,17 @@ var MAT=[
     {t:"Uma criança do 1º ano mede mais ou menos quanto?",r:"1 metro e 20",d:["10 metros","10 centímetros"],p:"Mais ou menos 1 metro e 20 centímetros."},
     {t:"O que é mais comprido: um lápis ou um ônibus?",r:"o ônibus",d:["o lápis","os dois iguais"],p:"O ônibus é muito mais comprido."},
     {t:"Quanto tempo tem 1 hora?",r:"60 minutos",d:["10 minutos","100 minutos"],p:"Uma hora tem 60 minutos."},
-    {t:"Quanto tempo tem 1 minuto?",r:"60 segundos",d:["10 segundos","30 segundos"],p:"Um minuto tem 60 segundos."}
+    {t:"Quanto tempo tem 1 minuto?",r:"60 segundos",d:["10 segundos","30 segundos"],p:"Um minuto tem 60 segundos."},
+    {t:"O que a gente usa para medir quanto líquido cabe numa garrafa?",r:"litro",d:["quilo","metro"],p:"Volume de líquido se mede em litros."},
+    {t:"Uma garrafa de refrigerante grande tem quanto?",r:"2 litros",d:["2 quilos","2 metros"],p:"A garrafa grande tem 2 litros."},
+    {t:"Quantos centímetros tem 1 metro?",r:"100",d:["10","1000"],p:"Um metro tem 100 centímetros."},
+    {t:"Quantos gramas tem 1 quilo?",r:"1000",d:["100","10"],p:"Um quilo tem 1000 gramas."},
+    {t:"O que pesa mais: um caderno ou uma geladeira?",r:"a geladeira",d:["o caderno","os dois iguais"],p:"A geladeira pesa muito mais."},
+    {t:"Quanto tempo tem 1 dia?",r:"24 horas",d:["12 horas","60 horas"],p:"O dia inteiro tem 24 horas."},
+    {t:"O que é mais alto: uma porta ou um prédio?",r:"o prédio",d:["a porta","os dois iguais"],p:"O prédio é muito mais alto."},
+    {t:"Para medir a distância entre duas cidades a gente usa...",r:"quilômetro",d:["centímetro","grama"],p:"Distâncias grandes se medem em quilômetros."},
+    {t:"Quanto pesa mais ou menos uma criança do 1º ano?",r:"cerca de 20 quilos",d:["2 quilos","200 quilos"],p:"Mais ou menos 20 quilos."},
+    {t:"Um copo de suco tem mais ou menos quanto?",r:"200 mililitros",d:["5 litros","1 grama"],p:"Um copo comum tem cerca de 200 ml."}
   ];
   var m=pick(mods);
   return {txt:m.t,fala:m.t,porque:m.p,
@@ -735,7 +778,16 @@ var RACIO=[
     {t:"Levanta a mão DIREITA. Ela fica do mesmo lado que o pé...",r:"direito",d:["esquerdo","dos dois"],p:"Mão direita e pé direito ficam do mesmo lado."},
     {t:"O sol está ACIMA ou ABAIXO das nuvens quando chove?",r:"acima",d:["abaixo","do lado"],p:"O sol fica sempre acima das nuvens."},
     {t:"A raiz da árvore fica onde?",r:"embaixo da terra",d:["no alto da árvore","no céu"],p:"A raiz cresce para baixo, embaixo da terra."},
-    {t:"Numa escada, para chegar no último degrau você...",r:"sobe",d:["desce","fica parado"],p:"O último degrau é o mais alto: precisa subir."}
+    {t:"Numa escada, para chegar no último degrau você...",r:"sobe",d:["desce","fica parado"],p:"O último degrau é o mais alto: precisa subir."},
+    {t:"O teto da sala fica onde em relação ao chão?",r:"em cima",d:["embaixo","do lado"],p:"O teto fica sempre acima do chão."},
+    {t:"Se você está ATRÁS da porta, alguém do outro lado te vê?",r:"não",d:["sim, sempre","só de noite"],p:"Atrás quer dizer escondido pelo objeto."},
+    {t:"Numa fila, quem está no FIM é o...",r:"último",d:["primeiro","do meio"],p:"Quem chega por último fica no fim."},
+    {t:"O peixe nada DENTRO de quê?",r:"da água",d:["da areia","do ar"],p:"O peixe vive dentro da água."},
+    {t:"Se o livro está ENTRE dois cadernos, ele está...",r:"no meio deles",d:["em cima dos dois","longe dos dois"],p:"Entre quer dizer no meio de dois."},
+    {t:"A raiz fica ABAIXO e a copa da árvore fica...",r:"acima",d:["abaixo também","do lado"],p:"A copa é a parte de cima da árvore."},
+    {t:"Se você vira à ESQUERDA e depois à esquerda de novo, você fica...",r:"virado para trás",d:["no mesmo lugar","virado para a direita"],p:"Duas viradas para o mesmo lado dão meia-volta."},
+    {t:"O que fica mais PERTO de você: o seu pé ou a lua?",r:"o meu pé",d:["a lua","os dois igual"],p:"A lua está a milhares de quilômetros."},
+    {t:"Numa página, a primeira linha fica...",r:"no alto",d:["embaixo","no meio"],p:"A leitura começa de cima para baixo."}
   ];
   var c=pick(casos);
   return {txt:c.t,fala:c.t,porque:c.p,cols:c.cols||3,emoji:!!c.emoji,
@@ -750,7 +802,15 @@ var RACIO=[
     {t:"Tenho mais de 3 e menos de 5 balas. Quantas balas eu tenho?",r:"4",d:["3","5"],p:"Entre 3 e 5 só existe o 4."},
     {t:"Se todo pássaro tem penas e a arara é um pássaro, a arara tem...",r:"penas",d:["escamas","pelos"],p:"Se todo pássaro tem penas, a arara também tem."},
     {t:"Choveu a noite inteira. De manhã a rua está...",r:"molhada",d:["seca","pegando fogo"],p:"Depois da chuva a rua fica molhada."},
-    {t:"O João chegou ANTES da Ana, e a Ana ANTES do Téo. Quem chegou por último?",r:"o Téo",d:["a Ana","o João"],p:"João, depois Ana, depois Téo: o Téo é o último."}
+    {t:"O João chegou ANTES da Ana, e a Ana ANTES do Téo. Quem chegou por último?",r:"o Téo",d:["a Ana","o João"],p:"João, depois Ana, depois Téo: o Téo é o último."},
+    {t:"Todo bolo leva farinha. Isto aqui é um bolo. Então ele leva...",r:"farinha",d:["pedra","areia"],p:"Se todo bolo leva, este também leva."},
+    {t:"Se amanhã é sábado, hoje é...",r:"sexta",d:["domingo","quinta"],p:"O dia de hoje vem sempre antes do de amanhã."},
+    {t:"Tenho mais de 6 e menos de 8 anos. Quantos anos eu tenho?",r:"7",d:["6","8"],p:"Entre 6 e 8 só existe o 7."},
+    {t:"O Téo é mais novo que a Bia. A Bia é mais nova que o vovô. Quem é o mais velho?",r:"o vovô",d:["a Bia","o Téo"],p:"Téo < Bia < vovô, então o vovô é o mais velho."},
+    {t:"Se eu tirar todas as balas do pote, quantas sobram?",r:"nenhuma",d:["todas","a metade"],p:"Tirar todas deixa o pote vazio."},
+    {t:"Peguei um guarda-chuva ao sair. Provavelmente estava...",r:"chovendo",d:["muito sol","nevando"],p:"Guarda-chuva serve para a chuva."},
+    {t:"A luz da casa apagou de repente. O mais provável é que...",r:"faltou energia",d:["a casa sumiu","virou noite na hora"],p:"Falta de energia é a explicação mais simples."},
+    {t:"Todo quadrado tem 4 lados. Esta figura tem 3 lados. Ela é um quadrado?",r:"não",d:["sim","às vezes"],p:"Com 3 lados é triângulo, não quadrado."}
   ];
   if(nv>=3) base=base.concat([
     {t:"Nem todo animal voa. O cachorro é um animal. O cachorro voa?",r:"não",d:["sim","às vezes"],p:"Só alguns animais voam; o cachorro não é um deles."},
@@ -861,8 +921,13 @@ enSkill("Vocabulário",vocab,"Como se diz isso em inglês?"),
     ops:shuffle([{t:w.pt,ok:true}].concat(outras.map(function(x){return {t:x.pt,ok:false};}))),cols:3};
 }},
 {tag:"Cores",area:"ingles",fn:function(nv){
-  var lista=nv<=1?CORES.slice(0,5):CORES, c=pick(lista);
+  var lista=nv<=1?CORES.slice(0,7):CORES, c=pick(lista);
   var outras=pickN(lista.filter(function(x){return x.en!==c.en;}),nv>=3?3:2);
+  /* metade das vezes a pergunta vem ao contrário: da palavra para a cor */
+  if(Math.random()<0.5)
+    return {txt:'Qual é a cor "'+c.en.toUpperCase()+'"?',fala:c.en,falaLang:"en",
+      porque:'"'+c.en+'" é '+c.pt+".",
+      ops:shuffle([{t:c.e,ok:true}].concat(outras.map(function(x){return {t:x.e,ok:false};}))),cols:3,emoji:true};
   return {txt:"What color is this?",fala:"What color is this?",falaLang:"en",fig:c.e,figGrande:true,
     porque:'Esta cor é "'+c.en+'" — '+c.pt+".",
     ops:shuffle([{t:c.en,ok:true}].concat(outras.map(function(x){return {t:x.en,ok:false};}))),cols:3,opsLang:"en"};
@@ -985,7 +1050,12 @@ var B_PLANTAS={
   {t:"Qual parte da planta é colorida e cheirosa?",ok:"a flor",d:["a raiz","o tronco"],e:"🌻",p:"A flor é a parte colorida e perfumada."},
   {t:"O que a gente precisa fazer para a plantinha não morrer?",ok:"regar",d:["deixar no escuro","cobrir com plástico"],e:"🪴",p:"A planta precisa de água todos os dias."},
   {t:"Qual destes vem de uma planta?",ok:"🍞",d:["🥩","🥚"],emoji:true,p:"O pão é feito de trigo, que é uma planta."},
-  {t:"De que cor é a maioria das folhas?",ok:"verde",d:["azul","roxa"],e:"🍃",p:"As folhas são verdes por causa da clorofila."}
+  {t:"De que cor é a maioria das folhas?",ok:"verde",d:["azul","roxa"],e:"🍃",p:"As folhas são verdes por causa da clorofila."},
+  {t:"Onde a gente planta uma semente?",ok:"na terra",d:["na pedra","no vidro"],e:"🌰",p:"A semente precisa de terra para criar raiz."},
+  {t:"Qual destes é uma flor?",ok:"🌻",d:["🥕","🍞"],emoji:true,p:"O girassol é uma flor."},
+  {t:"O que a árvore perde no outono?",ok:"as folhas",d:["o tronco","a raiz"],e:"🍂",p:"Muitas árvores soltam as folhas no outono."},
+  {t:"A grama precisa de quê para ficar verdinha?",ok:"água e sol",d:["escuro","vento forte"],e:"🌱",p:"Sem água e sol a grama fica amarela."},
+  {t:"Qual parte da planta segura ela na terra?",ok:"a raiz",d:["a flor","a folha"],e:"🌳",p:"A raiz prende a planta no chão."}
  ],
  2:[
   {t:"Qual parte da planta leva a água da raiz até as folhas?",ok:"o caule",d:["a flor","a semente"],e:"🌿",p:"O caule é o cano que leva a água para cima."},
@@ -996,7 +1066,12 @@ var B_PLANTAS={
   {t:"Para que serve a semente dentro da fruta?",ok:"para nascer uma planta nova",d:["para dar sabor","para enfeitar"],e:"🍉",p:"Cada semente pode virar uma planta nova."},
   {t:"O que acontece com a planta que fica no escuro?",ok:"fica fraca e amarela",d:["cresce mais rápido","vira flor"],e:"🪴",p:"Sem luz ela não consegue fabricar alimento."},
   {t:"Qual árvore brasileira deu nome ao nosso país?",ok:"o pau-brasil",d:["a mangueira","o coqueiro"],e:"🌳",p:"O pau-brasil deu nome ao Brasil."},
-  {t:"O cacto guarda o quê dentro dele?",ok:"água",d:["mel","areia"],e:"🌵",p:"O cacto guarda água para sobreviver na seca."}
+  {t:"O cacto guarda o quê dentro dele?",ok:"água",d:["mel","areia"],e:"🌵",p:"O cacto guarda água para sobreviver na seca."},
+  {t:"Por que o cacto tem espinhos em vez de folhas?",ok:"para perder menos água",d:["para enfeitar","para subir"],e:"🌵",p:"Folha grande perde muita água; espinho perde pouca."},
+  {t:"O que acontece com a planta se a gente regar demais?",ok:"a raiz apodrece",d:["ela cresce o dobro","vira flor"],e:"🪴",p:"Água demais afoga a raiz."},
+  {t:"Qual destes a gente come e é semente?",ok:"🫘",d:["🥬","🥕"],emoji:true,p:"O feijão é a semente da planta."},
+  {t:"Por que as flores são coloridas e cheirosas?",ok:"para atrair os insetos",d:["para enfeitar a casa","por causa do sol"],e:"🌸",p:"A cor e o cheiro chamam as abelhas."},
+  {t:"De onde vem o algodão da camiseta?",ok:"de uma planta",d:["de um animal","de uma pedra"],e:"👕",p:"O algodão nasce no algodoeiro."}
  ],
  3:[
   {t:"Como se chama o processo em que a planta usa o sol para fazer alimento?",ok:"fotossíntese",d:["digestão","evaporação"],e:"🌿",p:"Fotossíntese: luz + água + gás carbônico = alimento."},
@@ -1007,7 +1082,12 @@ var B_PLANTAS={
   {t:"O que é um bioma?",ok:"um tipo de ambiente com plantas e bichos próprios",d:["um tipo de adubo","uma ferramenta"],e:"🌍",p:"Amazônia, Cerrado e Caatinga são biomas do Brasil."},
   {t:"Quem leva o pólen de uma flor para a outra?",ok:"as abelhas e o vento",d:["as pedras","a chuva forte"],e:"🌸",p:"Insetos e vento fazem a polinização."},
   {t:"Por que as raízes de algumas árvores são enormes?",ok:"para segurar a árvore e buscar água fundo",d:["para enfeitar","para dar sombra"],e:"🌳",p:"Raízes grandes dão firmeza e alcançam água profunda."},
-  {t:"O que é adubo?",ok:"comida para a terra e para a planta",d:["um tipo de inseto","uma pedra"],e:"🪴",p:"O adubo devolve nutrientes para a terra."}
+  {t:"O que é adubo?",ok:"comida para a terra e para a planta",d:["um tipo de inseto","uma pedra"],e:"🪴",p:"O adubo devolve nutrientes para a terra."},
+  {t:"O que é a clorofila?",ok:"a substância verde que capta a luz",d:["um tipo de raiz","a água da planta"],e:"🍃",p:"É ela que deixa a folha verde e faz a fotossíntese."},
+  {t:"Por que árvore de sombra ajuda a cidade a ficar mais fresca?",ok:"ela bloqueia o sol e solta vapor de água",d:["ela sopra vento","ela faz chuva na hora"],e:"🌳",p:"A copa faz sombra e a folha solta vapor, que refresca."},
+  {t:"O que são plantas carnívoras?",ok:"plantas que capturam insetos",d:["plantas venenosas","plantas de plástico"],e:"🪴",p:"Elas pegam insetos para completar a alimentação."},
+  {t:"Por que existem sementes com asinhas ou pelinhos?",ok:"para o vento levar longe",d:["para voar sozinhas","para não molhar"],e:"🌬️",p:"O vento espalha a semente para longe da planta-mãe."},
+  {t:"O que é uma muda?",ok:"uma plantinha jovem para replantar",d:["uma semente seca","uma folha caída"],e:"🌱",p:"A muda já tem raiz e pode ir para a terra."}
  ]
 };
 
@@ -1045,7 +1125,11 @@ var B_CORPO={
   {t:"Qual grupo de alimentos dá mais energia para brincar?",ok:"os carboidratos, como arroz e pão",d:["os doces industrializados","os refrigerantes"],e:"🍚",p:"Arroz, pão e massas são a gasolina do corpo."},
   {t:"Por que a gente sua quando faz exercício?",ok:"para esfriar o corpo",d:["para engordar","para ficar sujo"],e:"💦",p:"O suor evapora e resfria a pele."},
   {t:"O que é um micróbio?",ok:"um ser vivo tão pequeno que não dá para ver",d:["um tipo de pedra","um inseto grande"],e:"🦠",p:"Bactérias e vírus são micróbios."},
-  {t:"Os alimentos que ajudam o corpo a crescer são ricos em...",ok:"proteína",d:["açúcar","corante"],e:"🥚",p:"Ovo, carne e feijão têm proteína, que constrói o corpo."}
+  {t:"Os alimentos que ajudam o corpo a crescer são ricos em...",ok:"proteína",d:["açúcar","corante"],e:"🥚",p:"Ovo, carne e feijão têm proteína, que constrói o corpo."},
+  {t:"Para que serve o esqueleto além de sustentar?",ok:"proteger os órgãos",d:["dar cor à pele","guardar comida"],e:"🦴",p:"As costelas protegem o coração e o pulmão."},
+  {t:"O que o estômago faz com a comida?",ok:"desmancha ela em pedacinhos",d:["esquenta ela","guarda para amanhã"],e:"🍽️",p:"O suco do estômago quebra a comida."},
+  {t:"Por que a gente precisa de fibras, como as da fruta?",ok:"para o intestino funcionar bem",d:["para ficar mais forte","para dormir"],e:"🍎",p:"As fibras ajudam o intestino a trabalhar."},
+  {t:"O que acontece com o corpo quando a gente dorme?",ok:"ele se recupera e cresce",d:["ele para de funcionar","ele encolhe"],e:"😴",p:"É dormindo que o corpo se recupera e fixa o que aprendeu."}
  ]
 };
 
@@ -1083,7 +1167,11 @@ var B_TEMPO={
   {t:"Por que existe verão e inverno?",ok:"porque a Terra é inclinada e gira em volta do sol",d:["porque o sol se apaga","porque a lua muda"],e:"🌞",p:"A inclinação da Terra faz cada parte receber mais ou menos sol."},
   {t:"O que causa o trovão?",ok:"o ar esquentando muito rápido no raio",d:["as nuvens batendo","a chuva caindo"],e:"⛈️",p:"O raio aquece o ar de repente e o estouro é o trovão."},
   {t:"Por que o gelo flutua na água?",ok:"porque é mais leve que a água líquida",d:["porque é branco","porque é frio"],e:"🧊",p:"O gelo é menos denso, então boia."},
-  {t:"O aquecimento global acontece porque...",ok:"soltamos gases demais no ar",d:["o sol chegou perto","choveu pouco"],e:"🌡️",p:"Os gases seguram o calor perto da Terra."}
+  {t:"O aquecimento global acontece porque...",ok:"soltamos gases demais no ar",d:["o sol chegou perto","choveu pouco"],e:"🌡️",p:"Os gases seguram o calor perto da Terra."},
+  {t:"O que é a atmosfera?",ok:"a camada de ar em volta da Terra",d:["o mar","a crosta de pedra"],e:"🌍",p:"É ela que segura o ar que respiramos."},
+  {t:"Por que faz mais frio no alto da montanha?",ok:"porque o ar lá em cima é mais rarefeito",d:["porque está perto da neve","porque tem mais vento só"],e:"⛰️",p:"Quanto mais alto, menos ar para guardar o calor."},
+  {t:"O que é um furacão?",ok:"uma tempestade enorme que gira",d:["um tipo de nuvem parada","um terremoto"],e:"🌀",p:"O furacão gira em volta de um centro, o olho."},
+  {t:"Por que o mar é salgado?",ok:"os rios levam sais das rochas para ele",d:["alguém joga sal","por causa do sol"],e:"🌊",p:"A água que evapora deixa o sal para trás."}
  ]
 };
 
@@ -1096,7 +1184,12 @@ var B_PLANETA={
   {t:"É certo jogar lixo pela janela do carro?",ok:"não, nunca",d:["sim, se for pequeno","só se ninguém vir"],e:"🚗",p:"O lixo na rua entope bueiro e polui o rio."},
   {t:"Plantar uma árvore faz bem porque...",ok:"limpa o ar e dá sombra",d:["suja a rua","gasta água do mar"],e:"🌳",p:"Árvores limpam o ar e refrescam a cidade."},
   {t:"Banho demorado gasta o quê?",ok:"muita água",d:["muito papel","muita comida"],e:"🚿",p:"Banho curto economiza água."},
-  {t:"O que a gente faz com a sacola quando vai ao mercado?",ok:"levar uma sacola de pano",d:["pegar 10 sacolas","jogar no chão"],e:"🛍️",p:"A sacola reutilizável evita lixo plástico."}
+  {t:"O que a gente faz com a sacola quando vai ao mercado?",ok:"levar uma sacola de pano",d:["pegar 10 sacolas","jogar no chão"],e:"🛍️",p:"A sacola reutilizável evita lixo plástico."},
+  {t:"Quando a gente escova os dentes, o copo com água serve para...",ok:"economizar água",d:["gastar mais","enfeitar"],e:"🥤",p:"Com o copo dá para não deixar a torneira aberta."},
+  {t:"Papel usado dos dois lados economiza...",ok:"árvores",d:["energia elétrica","água do mar"],e:"📄",p:"Menos papel gasto é menos árvore cortada."},
+  {t:"O que é melhor: consertar um brinquedo ou jogar fora?",ok:"consertar",d:["jogar fora","comprar dois novos"],e:"🧸",p:"Consertar gera menos lixo."},
+  {t:"Deixar a TV ligada sem ninguém assistindo...",ok:"gasta energia à toa",d:["não faz mal","economiza"],e:"📺",p:"Aparelho ligado à toa gasta energia."},
+  {t:"Onde é melhor brincar para não estragar as plantas?",ok:"no caminho, sem pisar nos canteiros",d:["em cima das flores","arrancando as folhas"],e:"🌷",p:"Pisar no canteiro machuca as plantinhas."}
  ],
  2:[
   {t:"Papel usado vai para qual cor de lixeira na reciclagem?",ok:"azul",d:["verde","vermelha"],e:"📄",p:"Azul é papel, verde é vidro, vermelho é plástico."},
@@ -1106,7 +1199,11 @@ var B_PLANETA={
   {t:"Por que não devemos jogar óleo de cozinha na pia?",ok:"porque polui a água",d:["porque entope a geladeira","porque cheira mal só"],e:"🛢️",p:"Um litro de óleo polui milhares de litros de água."},
   {t:"Pilhas e baterias velhas devem ir para...",ok:"um ponto de coleta especial",d:["o lixo comum","o vaso sanitário"],e:"🔋",p:"Pilhas têm metais que contaminam o solo."},
   {t:"Andar de bicicleta em vez de carro ajuda porque...",ok:"não polui o ar",d:["gasta mais gasolina","faz mais barulho"],e:"🚲",p:"A bicicleta não solta fumaça."},
-  {t:"O que acontece com o plástico que vai parar no mar?",ok:"os animais se machucam com ele",d:["vira comida boa","desaparece em 1 dia"],e:"🐢",p:"Tartarugas confundem plástico com água-viva."}
+  {t:"O que acontece com o plástico que vai parar no mar?",ok:"os animais se machucam com ele",d:["vira comida boa","desaparece em 1 dia"],e:"🐢",p:"Tartarugas confundem plástico com água-viva."},
+  {t:"Por que é melhor tomar banho rápido?",ok:"economiza água e energia",d:["deixa mais limpo","é mais divertido"],e:"🚿",p:"O chuveiro gasta muita água e energia."},
+  {t:"Lixo eletrônico, como celular velho, deve ir para...",ok:"um ponto de coleta de eletrônicos",d:["o lixo comum","a pia"],e:"📱",p:"Eletrônicos têm metais que poluem o solo."},
+  {t:"Comprar comida da feira perto de casa ajuda porque...",ok:"o alimento viaja menos e polui menos",d:["é sempre mais barato","tem embalagem bonita"],e:"🥬",p:"Menos transporte, menos poluição."},
+  {t:"O que é horta comunitária?",ok:"uma horta cuidada por várias pessoas juntas",d:["uma loja de plantas","um tipo de adubo"],e:"🌱",p:"Vizinhos plantam e colhem juntos."}
  ],
  3:[
   {t:"Quanto tempo uma garrafa plástica leva para se decompor?",ok:"centenas de anos",d:["uma semana","um mês"],e:"🥤",p:"Pode levar mais de 400 anos."},
@@ -1116,7 +1213,11 @@ var B_PLANETA={
   {t:"Por que a Amazônia é tão importante?",ok:"guarda muita água, bichos e plantas",d:["porque é bonita só","porque tem estrada"],e:"🌳",p:"É a maior floresta tropical do mundo."},
   {t:"O que é coleta seletiva?",ok:"separar o lixo por tipo",d:["escolher o lixo mais bonito","queimar o lixo"],e:"♻️",p:"Separar papel, plástico, vidro e metal permite reciclar."},
   {t:"Reduzir, reutilizar, reciclar: qual vem primeiro e é o melhor?",ok:"reduzir",d:["reciclar","reutilizar"],e:"♻️",p:"O melhor lixo é o que nem chega a existir."},
-  {t:"O que a gente pode fazer com uma garrafa PET em casa?",ok:"virar vaso de planta",d:["jogar no rio","enterrar no quintal"],e:"🪴",p:"Reutilizar antes de reciclar é ainda melhor."}
+  {t:"O que a gente pode fazer com uma garrafa PET em casa?",ok:"virar vaso de planta",d:["jogar no rio","enterrar no quintal"],e:"🪴",p:"Reutilizar antes de reciclar é ainda melhor."},
+  {t:"O que é a pegada de carbono?",ok:"o quanto as nossas escolhas poluem",d:["a marca do pé na areia","um tipo de lixo"],e:"👣",p:"Andar a pé ou de bicicleta diminui a pegada."},
+  {t:"Por que o gelo dos polos está derretendo?",ok:"porque o planeta está esquentando",d:["porque o sol cresceu","porque chove menos"],e:"🧊",p:"O aquecimento global derrete as geleiras."},
+  {t:"O que acontece com o nível do mar quando o gelo dos polos derrete?",ok:"sobe",d:["desce","fica igual"],e:"🌊",p:"Mais água líquida faz o mar subir e invadir cidades."},
+  {t:"Qual meio de transporte polui menos por pessoa?",ok:"o ônibus cheio",d:["o carro com uma pessoa","o avião"],e:"🚌",p:"Um ônibus leva dezenas de pessoas de uma vez."}
  ]
 };
 
@@ -1127,7 +1228,14 @@ var B_ESPACO={
   {t:"O que a gente vê brilhando no céu à noite?",ok:"estrelas",d:["peixes","flores"],e:"⭐",p:"As estrelas brilham à noite."},
   {t:"Quem viaja para o espaço?",ok:"o astronauta",d:["o bombeiro","o padeiro"],e:"👨‍🚀",p:"O astronauta viaja de foguete."},
   {t:"Como o foguete sobe para o espaço?",ok:"com muito fogo e força",d:["com asas","com rodas"],e:"🚀",p:"Os motores empurram o foguete para cima."},
-  {t:"A lua gira em volta de quem?",ok:"da Terra",d:["do sol","de Júpiter"],e:"🌙",p:"A lua é o satélite da Terra."}
+  {t:"A lua gira em volta de quem?",ok:"da Terra",d:["do sol","de Júpiter"],e:"🌙",p:"A lua é o satélite da Terra."},
+  {t:"A Terra gira em volta de quem?",ok:"do sol",d:["da lua","de Marte"],e:"🌍",p:"A Terra dá uma volta no sol por ano."},
+  {t:"De que cor a gente vê o céu de dia?",ok:"azul",d:["verde","roxo"],e:"☁️",p:"De dia o céu fica azul por causa da luz do sol."},
+  {t:"O que o astronauta veste para sair da nave?",ok:"uma roupa especial com oxigênio",d:["pijama","capa de chuva"],e:"👩‍🚀",p:"No espaço não tem ar para respirar."},
+  {t:"Qual é maior de verdade: o sol ou a Terra?",ok:"o sol",d:["a Terra","os dois iguais"],e:"☀️",p:"Caberiam mais de um milhão de Terras dentro do sol."},
+  {t:"O que a gente usa para ver as estrelas de perto?",ok:"telescópio",d:["microscópio","termômetro"],e:"🔭",p:"O telescópio aproxima as coisas do céu."},
+  {t:"No espaço tem som?",ok:"não, é silencioso",d:["sim, é barulhento","só de dia"],e:"🌌",p:"Sem ar, o som não tem por onde viajar."},
+  {t:"O que tem muito na lua e deixa ela cheia de buracos?",ok:"crateras",d:["árvores","lagos"],e:"🌕",p:"As crateras vieram de pedras que bateram nela."}
  ],
  2:[
   {t:"Quantos planetas tem o Sistema Solar?",ok:"8",d:["3","20"],e:"🪐",p:"Mercúrio, Vênus, Terra, Marte, Júpiter, Saturno, Urano e Netuno."},
@@ -1136,7 +1244,14 @@ var B_ESPACO={
   {t:"A Terra leva quanto tempo para dar uma volta no sol?",ok:"1 ano",d:["1 dia","1 semana"],e:"🌍",p:"Uma volta completa leva 365 dias."},
   {t:"A Terra leva quanto tempo para girar em si mesma?",ok:"1 dia",d:["1 mês","1 hora"],e:"🌎",p:"Um giro dá 24 horas: o dia e a noite."},
   {t:"Por que a lua muda de formato no céu?",ok:"porque vemos partes diferentes iluminadas",d:["porque ela quebra","porque some"],e:"🌗",p:"São as fases da lua."},
-  {t:"O que é um satélite natural da Terra?",ok:"a lua",d:["o sol","uma nuvem"],e:"🌕",p:"A lua é o único satélite natural da Terra."}
+  {t:"O que é um satélite natural da Terra?",ok:"a lua",d:["o sol","uma nuvem"],e:"🌕",p:"A lua é o único satélite natural da Terra."},
+  {t:"Qual é o planeta mais perto do sol?",ok:"Mercúrio",d:["Terra","Saturno"],e:"🪐",p:"Mercúrio é o primeiro planeta."},
+  {t:"Em qual planeta o ser humano já pisou além da Terra?",ok:"em nenhum, só na lua",d:["em Marte","em Júpiter"],e:"🌕",p:"A gente só pisou na lua, que não é planeta."},
+  {t:"Por que no espaço as coisas flutuam?",ok:"porque a gravidade quase não age lá",d:["porque tem vento","porque é frio"],e:"🧑‍🚀",p:"Longe da Terra a gravidade fica fraquinha."},
+  {t:"O que é a Via Láctea?",ok:"a galáxia onde a gente mora",d:["um planeta","um foguete"],e:"🌌",p:"É o conjunto de estrelas a que o sol pertence."},
+  {t:"O que é uma estrela cadente?",ok:"uma pedrinha queimando ao entrar no ar",d:["uma estrela caindo","um avião"],e:"☄️",p:"É um meteoro se queimando na atmosfera."},
+  {t:"O sol é o quê?",ok:"uma estrela",d:["um planeta","uma lua"],e:"☀️",p:"O sol é a estrela mais perto de nós."},
+  {t:"Por que a lua brilha?",ok:"porque reflete a luz do sol",d:["porque é de fogo","porque tem lâmpada"],e:"🌙",p:"A lua não tem luz própria."}
  ],
  3:[
   {t:"Por que no espaço o astronauta flutua?",ok:"porque quase não sente a gravidade",d:["porque é leve","porque tem asas"],e:"👩‍🚀",p:"Longe da Terra a força da gravidade quase não age."},
@@ -1145,7 +1260,13 @@ var B_ESPACO={
   {t:"O que acontece num eclipse solar?",ok:"a lua fica na frente do sol",d:["o sol apaga","a Terra para"],e:"🌑",p:"A lua tapa o sol e faz sombra na Terra."},
   {t:"Por que o sol parece maior que as outras estrelas?",ok:"porque está muito mais perto",d:["porque é a maior","porque é amarelo"],e:"☀️",p:"Existem estrelas bem maiores, só que longe."},
   {t:"Quanto tempo a luz do sol leva para chegar na Terra?",ok:"cerca de 8 minutos",d:["1 segundo","1 ano"],e:"🔆",p:"Mesmo rapidíssima, a luz leva 8 minutos."},
-  {t:"O que é um cometa?",ok:"uma bola de gelo e poeira com rabo de luz",d:["uma estrela pequena","um avião"],e:"☄️",p:"Ao chegar perto do sol, o gelo derrete e forma a cauda."}
+  {t:"O que é um cometa?",ok:"uma bola de gelo e poeira com rabo de luz",d:["uma estrela pequena","um avião"],e:"☄️",p:"Ao chegar perto do sol, o gelo derrete e forma a cauda."},
+  {t:"Por que Plutão deixou de ser planeta?",ok:"porque é pequeno demais e divide a órbita",d:["porque explodiu","porque sumiu"],e:"🪐",p:"Hoje ele é chamado de planeta anão."},
+  {t:"O que são os planetas gasosos?",ok:"planetas sem chão firme, feitos de gás",d:["planetas de gelo","planetas com vulcões"],e:"🪐",p:"Júpiter, Saturno, Urano e Netuno são assim."},
+  {t:"Por que Mercúrio é tão quente de dia e gelado de noite?",ok:"porque quase não tem atmosfera",d:["porque gira devagar","porque é pequeno"],e:"🌡️",p:"Sem atmosfera, o calor não fica preso."},
+  {t:"O que é a Estação Espacial Internacional?",ok:"um laboratório que orbita a Terra",d:["um aeroporto","uma cidade em Marte"],e:"🛰️",p:"Astronautas de vários países moram e pesquisam nela."},
+  {t:"Quanto tempo a luz da lua leva para chegar aqui?",ok:"pouco mais de 1 segundo",d:["1 hora","1 dia"],e:"🌕",p:"A lua está muito mais perto que o sol."},
+  {t:"O que é um ano-luz?",ok:"a distância que a luz percorre em 1 ano",d:["um ano muito claro","a idade de uma estrela"],e:"🌠",p:"É medida de distância, não de tempo."}
  ]
 };
 
@@ -1157,7 +1278,13 @@ var B_MATERIAIS={
   {t:"De que é feita a camiseta?",ok:"tecido",d:["metal","vidro"],e:"👕",p:"A camiseta é feita de tecido de algodão."},
   {t:"O que acontece com o sorvete no sol?",ok:"derrete",d:["congela","cresce"],e:"🍦",p:"O calor derrete o sorvete."},
   {t:"De que é feita a colher de metal?",ok:"metal",d:["papel","água"],e:"🥄",p:"É feita de metal, que é duro e brilhante."},
-  {t:"O que acontece com o papel na água?",ok:"molha e fica mole",d:["fica duro","vira vidro"],e:"📄",p:"O papel absorve a água."}
+  {t:"O que acontece com o papel na água?",ok:"molha e fica mole",d:["fica duro","vira vidro"],e:"📄",p:"O papel absorve a água."},
+  {t:"O que acontece com a manteiga na frigideira quente?",ok:"derrete",d:["congela","endurece"],e:"🧈",p:"O calor derrete a manteiga."},
+  {t:"De que é feito o pneu do carro?",ok:"borracha",d:["vidro","papel"],e:"🛞",p:"A borracha é mole e não deixa escapar o ar."},
+  {t:"O que acontece com a água no congelador?",ok:"vira gelo",d:["vira vapor",  "some"],e:"🧊",p:"O frio deixa a água dura."},
+  {t:"De que é feita a mesa de madeira?",ok:"madeira, que vem da árvore",d:["plástico","pedra"],e:"🪵",p:"A madeira vem do tronco das árvores."},
+  {t:"Qual destes flutua na água?",ok:"🍃",d:["🔩","🪨"],emoji:true,p:"A folha é bem leve e boia."},
+  {t:"O que acontece com o chocolate na mão?",ok:"derrete com o calor",d:["endurece","vira água"],e:"🍫",p:"O calor da mão já derrete o chocolate."}
  ],
  2:[
   {t:"A água tem três estados. Quais são?",ok:"sólido, líquido e gasoso",d:["quente, morno e frio","doce, salgado e azedo"],e:"💧",p:"Gelo (sólido), água (líquido) e vapor (gasoso)."},
@@ -1167,7 +1294,13 @@ var B_MATERIAIS={
   {t:"O ímã gruda em quê?",ok:"em metal",d:["em plástico","em papel"],e:"🧲",p:"O ímã atrai ferro e outros metais."},
   {t:"De onde vem o papel?",ok:"da árvore",d:["do petróleo","da pedra"],e:"🌳",p:"O papel é feito da celulose da madeira."},
   {t:"De onde vem o plástico?",ok:"do petróleo",d:["da árvore","do leite"],e:"🛢️",p:"A maior parte do plástico vem do petróleo."},
-  {t:"O que conduz eletricidade?",ok:"o fio de metal",d:["a borracha","a madeira seca"],e:"🔌",p:"Metais conduzem; borracha isola."}
+  {t:"O que conduz eletricidade?",ok:"o fio de metal",d:["a borracha","a madeira seca"],e:"🔌",p:"Metais conduzem; borracha isola."},
+  {t:"Por que a panela é de metal e não de plástico?",ok:"porque o metal aguenta o fogo",d:["porque é mais bonito","porque é mais leve"],e:"🍳",p:"O plástico derreteria no fogo."},
+  {t:"O que é reciclar?",ok:"transformar uma coisa usada em outra nova",d:["jogar fora","guardar para sempre"],e:"♻️",p:"O material usado vira matéria-prima de novo."},
+  {t:"O que acontece com a bexiga cheia de ar solta no céu?",ok:"sobe, porque o gás é mais leve que o ar",d:["afunda","fica parada"],e:"🎈",p:"O gás hélio é mais leve que o ar."},
+  {t:"Qual destes é transparente?",ok:"o vidro da janela",d:["a parede","a madeira"],e:"🪟",p:"Transparente é aquilo que a gente vê através."},
+  {t:"O que faz o ferro enferrujar?",ok:"a água e o ar",d:["o sol só","o vento"],e:"🔩",p:"Ferro molhado por muito tempo enferruja."},
+  {t:"Uma esponja é dura ou mole?",ok:"mole e cheia de buraquinhos",d:["dura como pedra","lisa como vidro"],e:"🧽",p:"Os buraquinhos guardam a água."}
  ],
  3:[
   {t:"Quando a água congela, ela...",ok:"aumenta de tamanho",d:["diminui","some"],e:"🧊",p:"Por isso a garrafa cheia estoura no congelador."},
@@ -1176,7 +1309,13 @@ var B_MATERIAIS={
   {t:"Por que o navio de metal flutua se o metal afunda?",ok:"por causa do formato, cheio de ar dentro",d:["porque é pintado","porque é rápido"],e:"🚢",p:"O casco oco desloca muita água e faz o navio boiar."},
   {t:"Misturar açúcar na água é um exemplo de...",ok:"dissolver",d:["derreter","congelar"],e:"🥤",p:"O açúcar se dissolve e some na água."},
   {t:"Qual destes é reciclável infinitas vezes sem perder qualidade?",ok:"o vidro",d:["o papel","a madeira"],e:"🍾",p:"O vidro pode ser derretido e refeito para sempre."},
-  {t:"Por que a panela tem cabo de plástico ou madeira?",ok:"porque não esquenta tão rápido",d:["porque é bonito","porque é leve"],e:"🍳",p:"Plástico e madeira são isolantes térmicos."}
+  {t:"Por que a panela tem cabo de plástico ou madeira?",ok:"porque não esquenta tão rápido",d:["porque é bonito","porque é leve"],e:"🍳",p:"Plástico e madeira são isolantes térmicos."},
+  {t:"Como se chama a passagem de líquido para gás?",ok:"evaporação",d:["fusão","solidificação"],e:"♨️",p:"A água fervendo evapora."},
+  {t:"Como se chama a passagem de líquido para sólido?",ok:"solidificação",d:["fusão","evaporação"],e:"🧊",p:"A água virando gelo é solidificação."},
+  {t:"O que é densidade?",ok:"quanta matéria cabe num espaço",d:["o peso total","a cor"],e:"⚖️",p:"O que é menos denso que a água, flutua."},
+  {t:"Por que o óleo fica por cima da água?",ok:"porque é menos denso que a água",d:["porque é mais quente","porque é amarelo"],e:"🫗",p:"O menos denso sempre fica em cima."},
+  {t:"O que acontece quando a gente mistura areia e água?",ok:"a areia afunda e dá para separar",d:["a areia dissolve","vira uma coisa só"],e:"🏖️",p:"Areia não dissolve: é uma mistura que dá para separar."},
+  {t:"Qual destes materiais o ímã atrai?",ok:"🔩",d:["🪵","🧽"],emoji:true,p:"O ímã atrai ferro, não madeira nem esponja."}
  ]
 };
 
@@ -1188,7 +1327,14 @@ var B_SENTIDOS={
   {t:"Com qual sentido a gente escuta a música?",ok:"a audição",d:["o paladar","o tato"],e:"👂",p:"O ouvido escuta: é a audição."},
   {t:"Com qual sentido a gente sente o cheiro do bolo?",ok:"o olfato",d:["a visão","o tato"],e:"👃",p:"O nariz cheira: é o olfato."},
   {t:"O limão tem gosto de quê?",ok:"azedo",d:["doce","salgado"],e:"🍋",p:"O limão é azedo."},
-  {t:"O sal tem gosto de quê?",ok:"salgado",d:["doce","azedo"],e:"🧂",p:"O sal é salgado."}
+  {t:"O sal tem gosto de quê?",ok:"salgado",d:["doce","azedo"],e:"🧂",p:"O sal é salgado."},
+  {t:"O mel tem gosto de quê?",ok:"doce",d:["azedo","amargo"],e:"🍯",p:"O mel é bem docinho."},
+  {t:"Com qual parte do corpo a gente sente que a água está fria?",ok:"a pele",d:["a orelha","o olho"],e:"💧",p:"A pele sente frio, calor e dor."},
+  {t:"O que a gente usa para ver melhor quando enxerga mal?",ok:"óculos",d:["luva","chapéu"],e:"👓",p:"Os óculos ajudam os olhos."},
+  {t:"Qual destes é um som bem alto?",ok:"🚨",d:["🪶","🐾"],emoji:true,p:"A sirene faz um som muito alto."},
+  {t:"Se a comida está estragada, qual sentido avisa primeiro?",ok:"o olfato",d:["a audição","a visão"],e:"👃",p:"O cheiro ruim avisa antes de a gente provar."},
+  {t:"Com o que a gente sente que o algodão é macio?",ok:"com o tato",d:["com o paladar","com a audição"],e:"☁️",p:"O tato sente se é macio, áspero, duro ou mole."},
+  {t:"Quantos olhos a gente tem?",ok:"2",d:["1","4"],e:"👀",p:"Dois olhos ajudam a ver a profundidade."}
  ],
  2:[
   {t:"Se você fecha os olhos, ainda consegue reconhecer uma fruta pelo...",ok:"cheiro e pelo toque",d:["som da geladeira","gosto do ar"],e:"🍊",p:"Olfato e tato ajudam mesmo sem a visão."},
@@ -1196,7 +1342,13 @@ var B_SENTIDOS={
   {t:"Uma pessoa surda pode conversar usando...",ok:"língua de sinais",d:["só escrevendo sempre","não pode"],e:"🤟",p:"No Brasil usamos a Libras."},
   {t:"Por que o som do trovão chega depois do raio?",ok:"porque a luz é mais rápida que o som",d:["porque o som se perde","porque a nuvem atrasa"],e:"⛈️",p:"A luz viaja muito mais rápido que o som."},
   {t:"Qual órgão do sentido fica dentro da orelha?",ok:"o ouvido",d:["o olho","a língua"],e:"👂",p:"A orelha capta o som e o ouvido escuta."},
-  {t:"Por que a comida fica sem graça quando estamos gripados?",ok:"porque o nariz entupido atrapalha o paladar",d:["porque a língua dorme","porque a comida muda"],e:"🤧",p:"Olfato e paladar trabalham juntos."}
+  {t:"Por que a comida fica sem graça quando estamos gripados?",ok:"porque o nariz entupido atrapalha o paladar",d:["porque a língua dorme","porque a comida muda"],e:"🤧",p:"Olfato e paladar trabalham juntos."},
+  {t:"Por que a gente tem duas orelhas, uma de cada lado?",ok:"para saber de onde vem o som",d:["para ficar bonito","para equilibrar"],e:"👂",p:"Comparando os dois lados o cérebro descobre a direção."},
+  {t:"O que protege o olho da poeira?",ok:"o cílio e a pálpebra",d:["a sobrancelha só","o cabelo"],e:"👁️",p:"Cílios e pálpebras barram sujeira."},
+  {t:"Por que a gente pisca?",ok:"para limpar e molhar o olho",d:["para descansar","para enxergar mais longe"],e:"😌",p:"A piscada espalha a lágrima e limpa o olho."},
+  {t:"Qual sentido funciona mesmo quando a gente está dormindo?",ok:"a audição",d:["a visão","o paladar"],e:"👂",p:"É por isso que um barulho acorda a gente."},
+  {t:"Por que a língua queima quando a comida está muito quente?",ok:"porque o calor machuca a pele da língua",d:["porque o gosto muda","porque falta água"],e:"🌶️",p:"O calor forte machuca mesmo."},
+  {t:"O que a gente sente quando encosta numa lixa?",ok:"áspero",d:["macio","molhado"],e:"🪵",p:"Áspero é o contrário de liso."}
  ],
  3:[
   {t:"Qual parte do olho deixa a luz entrar?",ok:"a pupila",d:["a sobrancelha","o cílio"],e:"👁️",p:"A pupila é a bolinha preta que abre e fecha."},
@@ -1204,7 +1356,13 @@ var B_SENTIDOS={
   {t:"Quem manda os sinais dos sentidos para o cérebro?",ok:"os nervos",d:["os ossos","o sangue só"],e:"🧠",p:"Os nervos levam a informação até o cérebro."},
   {t:"Por que ouvir som muito alto faz mal?",ok:"pode machucar o ouvido para sempre",d:["deixa a gente com fome","muda a cor do olho"],e:"🎧",p:"Sons altos danificam as células do ouvido."},
   {t:"Como se chama a dificuldade de enxergar de longe?",ok:"miopia",d:["gripe","cárie"],e:"👓",p:"Quem tem miopia enxerga bem de perto, mal de longe."},
-  {t:"O tato é mais sensível em qual parte do corpo?",ok:"na ponta dos dedos",d:["no cotovelo","no calcanhar"],e:"👆",p:"A ponta dos dedos tem muitas terminações nervosas."}
+  {t:"O tato é mais sensível em qual parte do corpo?",ok:"na ponta dos dedos",d:["no cotovelo","no calcanhar"],e:"👆",p:"A ponta dos dedos tem muitas terminações nervosas."},
+  {t:"Que parte do olho funciona como uma lente?",ok:"o cristalino",d:["a íris","o cílio"],e:"👁️",p:"O cristalino foca a imagem no fundo do olho."},
+  {t:"O que dá a cor dos olhos?",ok:"a íris",d:["a pupila","a lágrima"],e:"👁️",p:"A íris é a parte colorida."},
+  {t:"Como o som chega até o ouvido?",ok:"viajando pelo ar em ondas",d:["pela luz","pelo cheiro"],e:"🔊",p:"O som é vibração que viaja pelo ar."},
+  {t:"Por que quem nasce surdo pode ter dificuldade em falar?",ok:"porque a gente aprende a falar ouvindo",d:["porque a boca não funciona","porque não quer"],e:"🤟",p:"Por isso a língua de sinais é tão importante."},
+  {t:"O que é o daltonismo?",ok:"dificuldade de diferenciar algumas cores",d:["não enxergar nada","enxergar dobrado"],e:"🎨",p:"O mais comum é confundir verde e vermelho."},
+  {t:"Quanto tempo a gente leva para se acostumar com o escuro?",ok:"vários minutos",d:["1 segundo","1 hora"],e:"🌑",p:"O olho vai se adaptando aos poucos."}
  ]
 };
 
@@ -1216,7 +1374,13 @@ var B_BRASIL={
   {t:"Qual é um animal bem brasileiro?",ok:"🦜",d:["🐧","🐨"],emoji:true,p:"A arara é um animal típico do Brasil."},
   {t:"Qual comida é bem brasileira?",ok:"feijoada",d:["sushi","pizza"],e:"🍲",p:"A feijoada é um prato típico do Brasil."},
   {t:"Qual esporte o Brasil mais gosta?",ok:"futebol",d:["hóquei no gelo","esqui"],e:"⚽",p:"O futebol é a paixão nacional."},
-  {t:"Qual é a maior floresta do Brasil?",ok:"a Amazônia",d:["o Saara","a Sibéria"],e:"🌳",p:"A Amazônia é a maior floresta tropical do mundo."}
+  {t:"Qual é a maior floresta do Brasil?",ok:"a Amazônia",d:["o Saara","a Sibéria"],e:"🌳",p:"A Amazônia é a maior floresta tropical do mundo."},
+  {t:"Qual fruta é bem brasileira?",ok:"🥭",d:["🍒","🥝"],emoji:true,p:"A manga é muito comum no Brasil."},
+  {t:"Qual destes é um brinquedo de festa junina?",ok:"🎈",d:["⛷️","🛷"],emoji:true,p:"Festa junina tem balão, bandeirinha e quadrilha."},
+  {t:"Qual é a cor do meio da bandeira do Brasil?",ok:"azul, com estrelas",d:["vermelha","branca lisa"],e:"🇧🇷",p:"O círculo azul tem as estrelas e a faixa branca."},
+  {t:"Qual bicho grandão vive nos rios da Amazônia?",ok:"🐊",d:["🐧","🐻‍❄️"],emoji:true,p:"O jacaré vive nos rios do Brasil."},
+  {t:"No Brasil, o Natal cai em qual estação?",ok:"no verão",d:["no inverno","no outono"],e:"🎄",p:"Aqui o Natal é quente, diferente da Europa."},
+  {t:"Qual dança é bem brasileira?",ok:"o samba",d:["o balé russo","a valsa"],e:"💃",p:"O samba nasceu no Brasil."}
  ],
  2:[
   {t:"Qual é a capital do Brasil?",ok:"Brasília",d:["São Paulo","Rio de Janeiro"],e:"🏛️",p:"Brasília é a capital desde 1960."},
@@ -1226,7 +1390,13 @@ var B_BRASIL={
   {t:"Quem morava no Brasil antes dos portugueses chegarem?",ok:"os povos indígenas",d:["ninguém","os ingleses"],e:"🏹",p:"Muitos povos indígenas já viviam aqui."},
   {t:"Qual é a festa brasileira mais conhecida no mundo?",ok:"o Carnaval",d:["o Halloween","o Ano-Novo chinês"],e:"🎭",p:"O Carnaval é famoso no mundo inteiro."},
   {t:"Qual é o bioma seco do Nordeste, com cactos?",ok:"a Caatinga",d:["o Pantanal","a Mata Atlântica"],e:"🌵",p:"A Caatinga só existe no Brasil."},
-  {t:"Qual é a maior área alagada do Brasil, cheia de bichos?",ok:"o Pantanal",d:["o Cerrado","o Pampa"],e:"🐊",p:"O Pantanal é a maior planície alagada do mundo."}
+  {t:"Qual é a maior área alagada do Brasil, cheia de bichos?",ok:"o Pantanal",d:["o Cerrado","o Pampa"],e:"🐊",p:"O Pantanal é a maior planície alagada do mundo."},
+  {t:"Qual é a região onde fica a Amazônia?",ok:"o Norte",d:["o Sul","o Sudeste"],e:"🗺️",p:"A Amazônia fica na região Norte."},
+  {t:"Qual cidade brasileira tem o Cristo Redentor?",ok:"Rio de Janeiro",d:["Salvador","Curitiba"],e:"⛰️",p:"O Cristo fica no morro do Corcovado, no Rio."},
+  {t:"Que comida é típica da festa junina?",ok:"pamonha e canjica",d:["sushi","hambúrguer"],e:"🌽",p:"As comidas juninas são quase todas de milho."},
+  {t:"Quem descobriu o Brasil para os portugueses, em 1500?",ok:"Pedro Álvares Cabral",d:["Dom Pedro II","Santos Dumont"],e:"⛵",p:"Cabral chegou à Bahia em abril de 1500."},
+  {t:"Qual é o instrumento mais usado no samba?",ok:"o pandeiro",d:["a gaita de foles","o piano de cauda"],e:"🥁",p:"Pandeiro, surdo e cavaquinho fazem o samba."},
+  {t:"Qual é a maior cidade do Brasil?",ok:"São Paulo",d:["Manaus","Florianópolis"],e:"🏙️",p:"São Paulo tem mais de 11 milhões de pessoas."}
  ],
  3:[
   {t:"Quantos estados tem o Brasil?",ok:"26 estados e o Distrito Federal",d:["10 estados","50 estados"],e:"🗺️",p:"São 26 estados mais o Distrito Federal."},
@@ -1236,7 +1406,13 @@ var B_BRASIL={
   {t:"Qual é o estado mais populoso do Brasil?",ok:"São Paulo",d:["Acre","Roraima"],e:"🏙️",p:"São Paulo tem mais gente que qualquer outro estado."},
   {t:"Quem foi Tarsila do Amaral?",ok:"uma pintora brasileira",d:["uma cantora americana","uma atleta"],e:"🎨",p:"Tarsila pintou o famoso quadro Abaporu."},
   {t:"A Mata Atlântica fica principalmente onde?",ok:"perto do litoral",d:["no meio do deserto","só no Norte"],e:"🌴",p:"Ela acompanha a costa brasileira."},
-  {t:"O que é o Dia do Índio, em 19 de abril?",ok:"um dia para lembrar os povos indígenas",d:["um feriado do futebol","o aniversário do Brasil"],e:"🏹",p:"É uma data para valorizar a cultura indígena."}
+  {t:"O que é o Dia do Índio, em 19 de abril?",ok:"um dia para lembrar os povos indígenas",d:["um feriado do futebol","o aniversário do Brasil"],e:"🏹",p:"É uma data para valorizar a cultura indígena."},
+  {t:"Quem foi Santos Dumont?",ok:"o brasileiro que voou no 14-Bis",d:["um jogador de futebol","um cantor"],e:"✈️",p:"Ele fez o primeiro voo com um avião que decolou sozinho."},
+  {t:"Quantas estrelas tem a bandeira do Brasil?",ok:"27",d:["13","50"],e:"🇧🇷",p:"Uma para cada estado e uma para o Distrito Federal."},
+  {t:"O que está escrito na faixa da bandeira?",ok:"Ordem e Progresso",d:["Paz e Amor","Brasil Unido"],e:"🇧🇷",p:'A faixa branca traz "Ordem e Progresso".'},
+  {t:"Qual rio brasileiro é chamado de Velho Chico?",ok:"o São Francisco",d:["o Amazonas","o Paraná"],e:"🌊",p:"O rio São Francisco corta o Nordeste."},
+  {t:"O que é a Floresta Amazônica para o clima do mundo?",ok:"muito importante, ajuda a regular a chuva",d:["não faz diferença","atrapalha"],e:"🌳",p:'Ela é chamada de "rios voadores" pela chuva que espalha.'},
+  {t:"Quem foi Machado de Assis?",ok:"um dos maiores escritores do Brasil",d:["um piloto","um pintor francês"],e:"📚",p:"Ele escreveu Dom Casmurro e outros livros famosos."}
  ]
 };
 

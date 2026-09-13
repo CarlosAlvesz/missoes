@@ -13,7 +13,7 @@ eval(fs.readFileSync(path.join(raiz,"js/questoes.js"),"utf8"));
 var Q=window.QUESTOES;
 
 var SORTEIOS=2000;
-var MIN_VARIEDADE=4;   /* mínimo de questões distintas por habilidade/nível */
+var MIN_VARIEDADE=10;  /* mínimo de questões distintas por habilidade/nível */
 var falhas=[], avisos=[];
 function falha(m){ falhas.push(m); }
 function aviso(m){ avisos.push(m); }
@@ -105,7 +105,7 @@ Q.tipos.forEach(function(t){
     var v=Object.keys(distintas).length;
     if(n && v<MIN_VARIEDADE)
       falha(onde+": só "+v+" questão(ões) diferente(s) em "+SORTEIOS+" sorteios — a criança decora em pouco tempo");
-    if(n && v<10) aviso(onde+": só "+v+" questões diferentes — vale acrescentar mais");
+    if(n && v<16) aviso(onde+": só "+v+" questões diferentes — vale acrescentar mais");
   });
 });
 
