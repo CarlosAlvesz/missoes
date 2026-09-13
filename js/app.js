@@ -38,7 +38,21 @@ function uid(){return Date.now().toString(36)+"-"+Math.random().toString(36).sli
 var SOM=window.SOM||{ligar:function(){},toque:function(){},acerto:function(){},erro:function(){},
   fim:function(){},conquista:function(){},tique:function(){},suportado:function(){return false;}};
 
+var MUSICA=window.MUSICA||{iniciar:function(){},parar:function(){},abaixar:function(){},
+  levantar:function(){},tocando:function(){return false;}};
+
 function somLigado(){ return dados.cfg.som!==false; }
+function musicaLigada(){ return somLigado() && dados.cfg.musica!==false; }
+
+/* A música toca nas telas da criança. Sai de cena na leitura em voz alta
+   (a criança lê e o adulto escuta: som de fundo atrapalha) e na área dos
+   adultos. */
+function ajustarMusica(tela){
+  var naCrianca = ["tela-perfis","tela-home","tela-missao","tela-fim"].indexOf(tela)>=0;
+  var lendoEmVozAlta = (tela==="tela-missao" && atual && atual.tipo==="voz");
+  if(musicaLigada() && naCrianca && !lendoEmVozAlta) MUSICA.iniciar();
+  else MUSICA.parar();
+}
 
 var temVoz = typeof window.speechSynthesis !== "undefined";
 var vozes=[];
@@ -69,16 +83,28 @@ function falar(txt,lang){
     if(v) u.voice=v;
     u.rate = lang==="en" ? 0.82 : 0.92;
     u.pitch = 1.05;
+    /* a música abaixa enquanto a voz fala, senão o enunciado fica embolado */
+    MUSICA.abaixar();
+    u.onend=function(){ MUSICA.levantar(); };
+    u.onerror=function(){ MUSICA.levantar(); };
     speechSynthesis.speak(u);
-  }catch(e){}
+    /* rede de segurança: em alguns aparelhos o onend não dispara */
+    clearTimeout(timerVoz);
+    timerVoz=setTimeout(function(){ MUSICA.levantar(); }, Math.min(20000, 2500+txt.length*90));
+  }catch(e){ MUSICA.levantar(); }
 }
-function calarVoz(){ if(temVoz) try{ speechSynthesis.cancel(); }catch(e){} }
+var timerVoz=null;
+function calarVoz(){
+  if(temVoz) try{ speechSynthesis.cancel(); }catch(e){}
+  clearTimeout(timerVoz);
+  MUSICA.levantar();
+}
 
 /* =========================================================
    dados
    ========================================================= */
 var CHAVE="missoes.dados.v2";
-var dados={perfis:[],sessoes:[],cfg:{pin:"1234",ultimo:null,som:true}};
+var dados={perfis:[],sessoes:[],cfg:{pin:"1234",ultimo:null,som:true,musica:true}};
 var erroAoSalvar=false;
 
 function carregar(){
@@ -89,7 +115,7 @@ function carregar(){
       if(p&&typeof p==="object"){
         dados.perfis=Array.isArray(p.perfis)?p.perfis:[];
         dados.sessoes=Array.isArray(p.sessoes)?p.sessoes:[];
-        dados.cfg=Object.assign({pin:"1234",ultimo:null,som:true},p.cfg||{});
+        dados.cfg=Object.assign({pin:"1234",ultimo:null,som:true,musica:true},p.cfg||{});
       }
     }
   }catch(e){}
@@ -351,7 +377,9 @@ function medalhasConquistadas(p){
 var TELAS=["tela-perfis","tela-home","tela-missao","tela-fim","tela-aval","tela-pin","tela-pais","tela-crianca"];
 var atualPerfil=null;
 
+var telaAtual="tela-perfis";
 function mostrar(id){
+  telaAtual=id;
   TELAS.forEach(function(t){ var e=$(t); if(e) e.hidden=(t!==id); });
   var naCrianca = ["tela-home","tela-missao","tela-fim","tela-aval"].indexOf(id)>=0;
   /* durante a missão a barra de cima some: menos coisa para distrair */
@@ -363,6 +391,7 @@ function mostrar(id){
   $("btn-pais").hidden = emMissao;
   $("btn-pais").classList.toggle("on", id==="tela-pais");
   $("btn-pais").firstChild.className = "sinal" + (window.SYNC&&SYNC.estado()==="ok"?" ok":(window.SYNC&&SYNC.configurado?" off":""));
+  ajustarMusica(id);
   window.scrollTo(0,0);
 }
 
@@ -1025,6 +1054,8 @@ function pintarPais(){
   pintarListaPerfis();
   pintarSync();
   $("cfg-pin").value=dados.cfg.pin||"1234";
+  $("cfg-musica").checked = dados.cfg.musica!==false;
+  $("cfg-musica").disabled = !somLigado();
   $("versao").textContent="versão "+VERSAO;
 }
 
@@ -1440,6 +1471,7 @@ $("btn-som").addEventListener("click",function(){
   if(!somLigado()) calarVoz();
   salvar();
   pintarBotaoSom();
+  ajustarMusica(telaAtual);
   if(somLigado()) SOM.toque();
 });
 $("btn-trocar").addEventListener("click",function(){ calarVoz(); pararContagem(); pararAvanco(); atualPerfil=null; pintarPerfis(); mostrar("tela-perfis"); });
@@ -1498,6 +1530,12 @@ $("cr-apagar").addEventListener("click",function(){
   if(editando){ editando.removido=true; editando.atualizado=Date.now(); salvar(); }
   apagarArmado=false; b.textContent="Remover esta criança";
   voltarDeCrianca();
+});
+
+$("cfg-musica").addEventListener("change",function(){
+  dados.cfg.musica=this.checked;
+  salvar();
+  ajustarMusica(telaAtual);
 });
 
 $("cfg-pin").addEventListener("input",function(){

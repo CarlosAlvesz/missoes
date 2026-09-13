@@ -28,6 +28,12 @@ Os dois rodam no GitHub Actions a cada push. **Não considere um trabalho pronto
 - **Ao mexer em qualquer arquivo servido, suba o `CACHE` em `sw.js`** (`missoes-v3` → `missoes-v4`),
   senão quem já instalou continua com a versão velha.
 - **Sem anúncio, sem rastreamento, sem rede obrigatória.** O app tem de funcionar inteiro offline.
+- **Nada de arquivo de áudio.** Som e música são gerados por Web Audio. Um mp3 pesaria no cache
+  offline e traria questão de licença na publicação.
+- **A música nunca pode competir com a voz.** Ela abaixa durante `falar()` e para na leitura em voz
+  alta. `ajustarMusica(tela)` em `js/app.js` é quem decide; o teste de interface cobre isso.
+- **`js/musica.js` empresta o AudioContext do `SOM`** (`SOM.contexto()`). Não crie um segundo
+  contexto: os navegadores limitam quantos uma página pode abrir.
 
 ## Onde fica o quê
 
@@ -35,7 +41,8 @@ Os dois rodam no GitHub Actions a cada push. **Não considere um trabalho pronto
 |---|---|
 | Perguntas, por habilidade e nível | `js/questoes.js` |
 | Telas, revisão espaçada, níveis, painel | `js/app.js` |
-| Sons (gerados por Web Audio, sem arquivo) | `js/som.js` |
+| Efeitos sonoros (Web Audio, sem arquivo) | `js/som.js` |
+| Música de fundo (Web Audio, sem arquivo) | `js/musica.js` |
 | Sincronização opcional (Supabase) | `js/sync.js` |
 | Aparência, tema claro e escuro | `estilo.css` |
 

@@ -227,6 +227,92 @@ function conferir(condicao,texto){
   conferir(await pg.locator("#relatorio img, #sync-txt img, .relato img").count()===0,
            "nome digitado com HTML aparece como texto, não vira marcação");
 
+  /* ---------- música de fundo ---------- */
+  console.log("\nMúsica de fundo");
+  await pg.goto(base);
+  await pg.waitForTimeout(300);
+  function tocando(){ return pg.evaluate(function(){ return window.MUSICA && window.MUSICA.tocando(); }); }
+
+  await pg.click(".perfil:not(.novo)");
+  await pg.waitForTimeout(500);
+  conferir(await tocando(), "a música toca na tela da criança");
+
+  await pg.click(".mcard.m-voz");
+  await pg.waitForTimeout(400);
+  conferir(!(await tocando()), "a música PARA na leitura em voz alta, para não competir com a voz");
+  await pg.locator(".qcard .btn").click();
+  await pg.waitForTimeout(600);
+  await pg.click("#f-voltar");
+  await pg.waitForTimeout(400);
+  conferir(await tocando(), "a música volta depois da leitura em voz alta");
+
+  await pg.click("#btn-som");
+  await pg.waitForTimeout(300);
+  conferir(!(await tocando()), "o botão 🔊 no mudo desliga a música junto");
+  await pg.click("#btn-som");
+  await pg.waitForTimeout(300);
+  conferir(await tocando(), "religar o 🔊 traz a música de volta");
+
+  await pg.click("#btn-pais");
+  await pg.fill("#pin-in","1234"); await pg.click("#pin-ok");
+  await pg.waitForTimeout(400);
+  conferir(!(await tocando()), "a música para na área dos adultos");
+  conferir(await pg.locator("#cfg-musica").isChecked(), "a música vem ligada por padrão");
+  await pg.locator("#cfg-musica").uncheck();
+  await pg.waitForTimeout(200);
+  await pg.click("#btn-pais");
+  await pg.waitForTimeout(300);
+  await pg.click(".perfil:not(.novo)");
+  await pg.waitForTimeout(400);
+  conferir(!(await tocando()), "desligar a música nos ajustes realmente desliga");
+
+  /* a escolha tem de sobreviver a fechar e abrir o app */
+  await pg.goto(base);
+  await pg.waitForTimeout(400);
+  await pg.click(".perfil:not(.novo)");
+  await pg.waitForTimeout(400);
+  conferir(!(await tocando()), "a música continua desligada depois de reabrir o app");
+
+  /* as notas geradas precisam continuar musicais: no tom, sem repetir e sem estridência.
+     O gancho vai por addInitScript para sobreviver ao recarregamento. */
+  await pg.evaluate(function(){
+    var d=JSON.parse(localStorage.getItem("missoes.dados.v2"));
+    d.cfg.musica=true; localStorage.setItem("missoes.dados.v2",JSON.stringify(d));
+  });
+  await pg.addInitScript(function(){
+    window.__notas=[];
+    var C=(window.AudioContext||window.webkitAudioContext).prototype;
+    var orig=C.createOscillator;
+    C.createOscillator=function(){
+      var o=orig.call(this);
+      var sv=o.frequency.setValueAtTime.bind(o.frequency);
+      o.frequency.setValueAtTime=function(f,t){ window.__notas.push({f:f,tipo:o.type}); return sv(f,t); };
+      return o;
+    };
+  });
+  await pg.goto(base);
+  await pg.waitForTimeout(300);
+  await pg.click(".perfil:not(.novo)");
+  await pg.waitForTimeout(20000);
+  var notas=await pg.evaluate(function(){ return window.__notas||[]; });
+  var melodia=notas.filter(function(x){ return x.tipo==="triangle"; }).map(function(x){ return Math.round(x.f*10)/10; });
+  conferir(melodia.length>=8, "a música gerou notas de melodia ("+melodia.length+" em 20 s)");
+  if(melodia.length>=8){
+    var repetidas=0;
+    for(var i=1;i<melodia.length;i++) if(melodia[i]===melodia[i-1]) repetidas++;
+    conferir(repetidas===0, "a melodia nunca repete a mesma nota duas vezes seguidas ("+repetidas+")");
+    conferir(new Set(melodia).size>=5, "a melodia usa várias alturas diferentes ("+new Set(melodia).size+")");
+    conferir(Math.max.apply(null,melodia)<=1400, "nenhuma nota estridente (máx "+Math.round(Math.max.apply(null,melodia))+" Hz)");
+    conferir(Math.min.apply(null,melodia)>=200, "nenhuma nota grave demais para o alto-falante do celular");
+    /* toda nota tem de cair na pentatônica de dó: nada de sustenido fora do tom */
+    var PENTA=[0,2,4,7,9];
+    var foraDoTom=melodia.filter(function(f){
+      var semitom=Math.round(12*Math.log(f/130.81)/Math.log(2));
+      return PENTA.indexOf(((semitom%12)+12)%12)<0;
+    });
+    conferir(foraDoTom.length===0, "todas as notas ficam no tom ("+foraDoTom.length+" fora)");
+  }
+
   /* ---------- layout: nada sobreposto, nada vazando para fora ---------- */
   console.log("\nLayout no celular");
   await pg.goto(base);

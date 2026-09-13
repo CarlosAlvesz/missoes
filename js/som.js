@@ -52,6 +52,9 @@ window.SOM={
     if(ligado) contexto();
   },
   suportado:function(){ return suportado; },
+  /* o mesmo contexto de áudio é emprestado para a música de fundo:
+     o navegador limita quantos contextos uma página pode abrir */
+  contexto:function(){ return contexto(); },
   /* toque em qualquer botão */
   toque:function(){ nota(660,0,0.05,0.05,"triangle"); },
   /* acertou */

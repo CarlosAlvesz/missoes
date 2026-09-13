@@ -184,11 +184,27 @@ A cada 5 dias seguidos ela ganha um escudo 🛡️; se um dia ficar em branco, o
 e a sequência não quebra. Guarda no máximo 2. A ideia é a mesma do *streak freeze* do Duolingo:
 perder a sequência por causa de um imprevisto desanima mais do que ensina.
 
-**Sons**
+**Sons e música**
 
-O app faz os próprios sons (não tem nenhum arquivo de áudio: é tudo gerado pelo navegador, então
-continua leve e funcionando offline) e vibra no celular. O botão 🔊 no topo liga e desliga tudo,
-inclusive a voz — útil em sala de espera, ônibus ou na hora de dormir.
+O app faz os próprios sons e a própria música: **não existe nenhum arquivo de áudio**, é tudo gerado
+pelo navegador na hora. Por isso continua leve, funciona offline e não tem nenhuma questão de licença
+para publicar. O celular também vibra nos acertos e erros.
+
+A música de fundo é feita para acompanhar sem atrapalhar:
+
+- toca sempre em escala pentatônica, onde nenhuma combinação de notas soa errada;
+- é lenta, baixinha e cheia de pausas, sem melodia marcante — para a criança não ficar cantarolando
+  em vez de pensar;
+- as notas são sorteadas em caminhada, nunca se repetindo igual: não é um loop de poucos segundos;
+- **abaixa sozinha quando o app fala**, para o enunciado sair limpo;
+- **para por completo na leitura em voz alta**, quando a criança lê e o adulto escuta;
+- para quando o app vai para segundo plano, para não ficar tocando no bolso.
+
+O botão 🔊 no topo desliga tudo de uma vez — música, efeitos e voz. Em **Adultos → Ajustes** dá para
+desligar só a música e manter os efeitos.
+
+> Se a criança se distrai com facilidade, vale desligar a música por uma semana e comparar a nota de
+> concentração no relatório. É justamente para isso que o relatório existe.
 
 ---
 
@@ -201,7 +217,8 @@ inclusive a voz — útil em sala de espera, ônibus ou na hora de dormir.
 | Adicionar ou remover crianças | Adultos → Crianças |
 | Treinar uma habilidade específica | Adultos → o que reforçar → **Treinar isso** |
 | Mudar a meta de missões por dia | dentro do app, em Adultos → Crianças |
-| Ligar e desligar os sons | botão 🔊 no topo |
+| Ligar e desligar os sons e a música | botão 🔊 no topo |
+| Desligar só a música de fundo | Adultos → Ajustes |
 | Acrescentar palavras, contas ou perguntas | `js/questoes.js` |
 | Mudar cores e tamanhos | `estilo.css` |
 | Mudar quantas perguntas tem cada missão | `js/app.js`, constante `NQ` |
@@ -209,6 +226,7 @@ inclusive a voz — útil em sala de espera, ônibus ou na hora de dormir.
 | Mudar os intervalos da revisão espaçada | `js/app.js`, constante `ESPERA` |
 | Mudar quantas estrelas sobem de nível | `js/app.js`, constante `POR_NIVEL` |
 | Mudar os sons | `js/som.js` |
+| Mudar a música (andamento, escala, volume) | `js/musica.js` |
 
 **Esqueceu o PIN dos adultos?** Ele fica guardado no próprio navegador. Abra o app, pressione F12
 (ou, no celular, abra num computador), vá em *Application → Local Storage*, procure a chave
@@ -231,7 +249,8 @@ sw.js                      cache offline
 schema.sql                 banco de dados, para colar no Supabase
 js/questoes.js             o banco de questões, por habilidade e nível
 js/app.js                  telas, perfis, níveis, revisão, recompensas, painel
-js/som.js                  sons do jogo, gerados pelo navegador
+js/som.js                  efeitos sonoros, gerados pelo navegador
+js/musica.js               música de fundo, também gerada na hora
 js/sync.js                 sincronização entre aparelhos
 testes/testar.js           confere o banco de questões inteiro
 testes/interface.js        joga o app num navegador de verdade

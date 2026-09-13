@@ -466,3 +466,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 /* botão de treinar dentro do cartão "o que reforçar" */
 .rf .treinar{margin-top:9px;align-self:flex-start;border-color:var(--leitura);color:var(--leitura)}
 .rf .treinar:hover{background:var(--leitura);color:#fff;border-color:var(--leitura)}
+
+/* caixinha de opção nos ajustes */
+.opcao{display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600}
+.opcao input{width:20px;height:20px;accent-color:var(--voz);cursor:pointer;flex:0 0 auto}
+.opcao input:disabled{cursor:default}
+.opcao input:disabled + span{opacity:.5}
