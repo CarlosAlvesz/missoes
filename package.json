@@ -1,0 +1,10 @@
+{
+  "name": "missoes",
+  "version": "2.0.0",
+  "description": "App de estudos do 1º ano: leitura, matemática, raciocínio, inglês e ciências, com revisão espaçada e painel para os adultos.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "node testes/testar.js"
+  }
+}

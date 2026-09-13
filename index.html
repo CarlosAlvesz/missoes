@@ -22,8 +22,10 @@
     <span class="topspace"></span>
     <button class="chip" id="btn-trocar" type="button" hidden>Trocar de criança</button>
     <button class="chip" id="btn-letra" type="button" hidden>AA letra</button>
+    <button class="chip" id="btn-som" type="button" aria-pressed="true" title="Ligar ou desligar os sons">🔊</button>
     <button class="chip" id="btn-pais" type="button"><span class="sinal" id="sinal"></span> Adultos</button>
   </div>
+  <div class="aviso-global" id="aviso-global" role="status" hidden></div>
 
   <!-- ============ ESCOLHER CRIANÇA ============ -->
   <div id="tela-perfis">
@@ -50,6 +52,11 @@
           <div class="medalhas" id="h-medalhas"></div>
         </div>
       </div>
+      <div class="meta" id="h-meta">
+        <div class="tk"><i id="h-meta-fill"></i></div>
+        <span class="kt" id="h-meta-txt"></span>
+      </div>
+      <div class="revisao-aviso kt" id="h-revisao" hidden></div>
       <div class="tally">
         <div><b id="k-hoje">0</b><span>hoje</span></div>
         <div><b id="k-estrelas">0</b><span>estrelas</span></div>
@@ -65,10 +72,11 @@
         <div class="dots" id="dots"></div>
         <span class="cnt" id="cnt"></span>
       </div>
-      <div class="qcard" id="qcard"></div>
+      <div class="qcard" id="qcard" aria-live="polite"></div>
     </div>
 
     <div id="tela-fim" hidden>
+      <div class="confete" id="confete" aria-hidden="true"></div>
       <div class="fim">
         <div class="estrelas" id="f-estrelas">★★★</div>
         <h2 class="kt" id="f-msg">Muito bem!</h2>
@@ -198,6 +206,16 @@
           <option value="imprensa">letra de imprensa escolar</option>
         </select>
       </div>
+      <div class="campo">
+        <label for="cr-meta">Meta de missões por dia</label>
+        <select id="cr-meta">
+          <option value="1">1 missão por dia</option>
+          <option value="2">2 missões por dia (recomendado)</option>
+          <option value="3">3 missões por dia</option>
+          <option value="4">4 missões por dia</option>
+        </select>
+        <p class="dica">Nessa idade, pouco e todo dia rende mais que muito de uma vez só.</p>
+      </div>
       <div class="acoes">
         <button class="btn" id="cr-salvar" type="button" style="--acc:var(--voz)">Salvar</button>
         <button class="btn sec" id="cr-voltar" type="button">Cancelar</button>
@@ -209,6 +227,7 @@
 </div>
 
 <script src="js/questoes.js"></script>
+<script src="js/som.js"></script>
 <script src="config.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/app.js"></script>

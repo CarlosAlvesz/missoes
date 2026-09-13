@@ -284,3 +284,72 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 .rodape{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);font-size:.79rem;color:var(--ink-faint);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* =========================================================
+   Acrescentado na versão 2
+   ========================================================= */
+
+/* ---------- aviso quando não dá para gravar no aparelho ---------- */
+.aviso-global{
+  background:var(--quase);color:#fff;border-radius:12px;padding:10px 14px;
+  font-size:.88rem;font-weight:600;margin-bottom:14px;
+}
+
+/* ---------- meta do dia ---------- */
+.meta{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.meta .tk{flex:1 1 130px;height:12px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.meta .tk i{display:block;height:100%;width:0;border-radius:99px;background:var(--ingles);transition:width .5s ease}
+.meta span{font-size:.92rem;font-weight:700;color:var(--ink-soft)}
+.meta.pronto .tk i{background:var(--ok)}
+.meta.pronto span{color:var(--ok)}
+
+/* ---------- aviso de revisão ---------- */
+.revisao-aviso{
+  background:color-mix(in srgb,var(--racio) 12%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--racio) 35%,var(--line));
+  color:var(--racio);border-radius:14px;padding:10px 14px;margin-bottom:14px;
+  font-size:.92rem;font-weight:600;
+}
+@supports not (color:color-mix(in srgb,red,blue)){
+  .revisao-aviso{background:var(--surface);border-color:var(--line-strong)}
+}
+
+/* selo de revisão na pergunta e no cartão da missão */
+.qtag em.rev{color:var(--racio);font-weight:700;letter-spacing:.04em}
+.mcard .rev{
+  position:absolute;bottom:13px;left:14px;font-size:.72rem;font-weight:700;color:var(--racio);
+}
+
+/* ---------- explicação depois do erro ---------- */
+.porque{
+  display:flex;align-items:center;gap:10px;
+  margin-top:12px;padding:12px 14px;border-radius:14px;
+  background:var(--surface-2);border:1px solid var(--line);
+  font-size:1rem;line-height:1.45;
+}
+.porque b{color:var(--ink-soft);font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;flex:0 0 auto;align-self:flex-start;padding-top:3px}
+.porque span{flex:1 1 auto;min-width:0}
+.speak.mini{width:38px;height:38px;font-size:.95rem;box-shadow:none}
+
+/* ---------- dica abaixo de um campo ---------- */
+.dica{font-size:.82rem;color:var(--ink-soft);margin:6px 0 0}
+
+/* ---------- confete ---------- */
+.confete{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.confete i{
+  position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;opacity:.9;
+  animation:cair linear forwards;
+}
+@keyframes cair{
+  0%{transform:translateY(-20px) rotate(0deg);opacity:1}
+  100%{transform:translateY(105vh) rotate(620deg);opacity:.15}
+}
+
+/* quem prefere menos movimento não vê o confete nem as transições */
+@media (prefers-reduced-motion: reduce){
+  .confete{display:none}
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}

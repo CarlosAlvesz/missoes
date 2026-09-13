@@ -6,34 +6,80 @@
 
 var Q=window.QUESTOES, U=Q.utils;
 var shuffle=U.shuffle, pick=U.pick, rnd=U.rnd;
-var NQ=8;
-var VERSAO="1.0";
+var NQ=8;                 /* perguntas por missão */
+var MAX_REVISAO=3;        /* quantas dessas podem ser de revisão */
+var LEMBRAR=70;           /* quantas perguntas recentes evitar repetir */
+var META_PADRAO=2;        /* missões por dia, meta inicial */
+var VERSAO="2.0";
 
 function $(id){return document.getElementById(id);}
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+/* monta um parágrafo com trechos em negrito sem passar por innerHTML:
+   nome de criança e e-mail são digitados por quem usa o app e podem
+   vir de outro aparelho pela sincronização */
+function frase(){
+  var p=el("p"), i;
+  for(i=0;i<arguments.length;i++){
+    var x=arguments[i];
+    if(x==null||x==="") continue;
+    if(typeof x==="object"&&x.b!=null) p.appendChild(el("b",null,String(x.b)));
+    else if(typeof x==="object"&&x.i!=null) p.appendChild(el("em",null,String(x.i)));
+    else p.appendChild(document.createTextNode(String(x)));
+  }
+  return p;
+}
+function neg(t){ return {b:t}; }
+function ita(t){ return {i:t}; }
 function hojeISO(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function fmtT(s){s=s||0;return s<60?(s+" segundos"):(Math.floor(s/60)+" min "+(s%60)+"s");}
 function uid(){return Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);}
 
-/* ---------- voz ---------- */
+/* ---------- som e voz ---------- */
+var SOM=window.SOM||{ligar:function(){},toque:function(){},acerto:function(){},erro:function(){},
+  fim:function(){},conquista:function(){},tique:function(){},suportado:function(){return false;}};
+
+function somLigado(){ return dados.cfg.som!==false; }
+
 var temVoz = typeof window.speechSynthesis !== "undefined";
+var vozes=[];
+function carregarVozes(){
+  if(!temVoz) return;
+  try{ vozes=speechSynthesis.getVoices()||[]; }catch(e){ vozes=[]; }
+}
+if(temVoz){
+  carregarVozes();
+  try{ speechSynthesis.addEventListener("voiceschanged",carregarVozes); }catch(e){}
+}
+/* escolhe a melhor voz do aparelho para a língua pedida */
+function melhorVoz(lang){
+  if(!vozes.length) return null;
+  var alvo = lang==="en" ? "en" : "pt";
+  var exatas=vozes.filter(function(v){ return v.lang && v.lang.toLowerCase().replace("_","-")===(alvo==="en"?"en-us":"pt-br"); });
+  if(exatas.length) return exatas[0];
+  var parecidas=vozes.filter(function(v){ return v.lang && v.lang.toLowerCase().indexOf(alvo)===0; });
+  return parecidas.length?parecidas[0]:null;
+}
 function falar(txt,lang){
-  if(!temVoz||!txt) return;
+  if(!temVoz||!txt||!somLigado()) return;
   try{
     speechSynthesis.cancel();
     var u=new SpeechSynthesisUtterance(txt);
     u.lang = lang==="en" ? "en-US" : "pt-BR";
+    var v=melhorVoz(lang);
+    if(v) u.voice=v;
     u.rate = lang==="en" ? 0.82 : 0.92;
     u.pitch = 1.05;
     speechSynthesis.speak(u);
   }catch(e){}
 }
+function calarVoz(){ if(temVoz) try{ speechSynthesis.cancel(); }catch(e){} }
 
 /* =========================================================
    dados
    ========================================================= */
 var CHAVE="missoes.dados.v2";
-var dados={perfis:[],sessoes:[],cfg:{pin:"1234",ultimo:null}};
+var dados={perfis:[],sessoes:[],cfg:{pin:"1234",ultimo:null,som:true}};
+var erroAoSalvar=false;
 
 function carregar(){
   try{
@@ -43,18 +89,97 @@ function carregar(){
       if(p&&typeof p==="object"){
         dados.perfis=Array.isArray(p.perfis)?p.perfis:[];
         dados.sessoes=Array.isArray(p.sessoes)?p.sessoes:[];
-        dados.cfg=Object.assign({pin:"1234",ultimo:null},p.cfg||{});
+        dados.cfg=Object.assign({pin:"1234",ultimo:null,som:true},p.cfg||{});
       }
     }
   }catch(e){}
 }
 function salvar(){
-  try{ localStorage.setItem(CHAVE,JSON.stringify(dados)); }catch(e){}
+  try{
+    localStorage.setItem(CHAVE,JSON.stringify(dados));
+    erroAoSalvar=false;
+  }catch(e){
+    /* memória do navegador cheia ou bloqueada: o adulto precisa saber,
+       senão a criança estuda e o histórico some sem ninguém perceber */
+    erroAoSalvar=true;
+    mostrarAvisoSalvar();
+  }
   agendarSync();
+}
+function mostrarAvisoSalvar(){
+  var a=$("arq-aviso");
+  if(a && !$("tela-pais").hidden){
+    a.textContent="Atenção: não consegui gravar neste aparelho (memória do navegador cheia ou bloqueada). Salve o histórico em arquivo antes de fechar.";
+    a.style.color="var(--quase)";
+  }
+  var b=$("aviso-global");
+  if(b){ b.hidden=false; b.textContent="⚠️ Não estou conseguindo gravar o progresso neste aparelho."; }
 }
 function perfisAtivos(){ return dados.perfis.filter(function(p){return !p.removido;}); }
 function acharPerfil(id){ for(var i=0;i<dados.perfis.length;i++) if(dados.perfis[i].id===id) return dados.perfis[i]; return null; }
-function sessoesDe(id){ return dados.sessoes.filter(function(s){return s.perfil===id;}); }
+/* sessões apagadas continuam na lista como marca, para que o "apagar
+   histórico" também valha nos outros aparelhos em vez de voltar no sync */
+function sessoesVivas(){ return dados.sessoes.filter(function(s){return !s.removido;}); }
+function sessoesDe(id){ return dados.sessoes.filter(function(s){return s.perfil===id && !s.removido;}); }
+
+/* =========================================================
+   revisão espaçada
+   Ideia emprestada do Anki e do sistema de caixas de Leitner:
+   o que a criança errou volta logo; o que ela acerta demora
+   cada vez mais para voltar, até sair da fila. É o que faz o
+   erro virar aprendizado em vez de só passar batido.
+   ========================================================= */
+var ESPERA=[0,0,1,3,7,16];   /* dias até a próxima revisão, por caixa */
+
+function filaRevisao(p){ if(!p.revisao||typeof p.revisao!=="object") p.revisao={}; return p.revisao; }
+
+function anotarErro(p,tag){
+  var f=filaRevisao(p);
+  f[tag]={caixa:1,prox:Date.now()};
+  p.atualizado=Date.now();
+}
+function anotarAcerto(p,tag){
+  var f=filaRevisao(p), r=f[tag];
+  if(!r) return;
+  r.caixa=(r.caixa||1)+1;
+  if(r.caixa>=ESPERA.length){ delete f[tag]; }      /* acertou várias vezes: dominou */
+  else r.prox=Date.now()+ESPERA[r.caixa]*864e5;
+  p.atualizado=Date.now();
+}
+var ATRASO_OUTRA_AREA=3*864e5;  /* só depois disso uma revisão invade outra matéria */
+
+/* Habilidades cuja hora de revisar já chegou, as mais atrasadas na frente.
+   Com `area`, devolve só as daquela matéria — uma missão de Números não
+   deve virar de repente uma pergunta de leitura — mas deixa passar as que
+   estão atrasadas há dias, para nada ficar esquecido na fila. */
+function revisoesVencidas(p,area){
+  var f=filaRevisao(p), agora=Date.now(), out=[], limpou=false;
+  Object.keys(f).forEach(function(tag){
+    var t=Q.porTag[tag];
+    if(!t){ delete f[tag]; limpou=true; return; }   /* habilidade que não existe mais */
+    var prox=f[tag].prox||0;
+    if(prox>agora) return;
+    if(area && t.area!==area && (agora-prox)<ATRASO_OUTRA_AREA) return;
+    out.push({tag:tag,area:t.area,prox:prox});
+  });
+  if(limpou) p.atualizado=Date.now();
+  out.sort(function(a,b){
+    var pa=(a.area===area?0:1), pb=(b.area===area?0:1);
+    return pa!==pb ? pa-pb : a.prox-b.prox;
+  });
+  return out;
+}
+function totalRevisoes(p){ return revisoesVencidas(p,null).length; }
+
+/* ---------- memória de perguntas recentes (para não repetir) ---------- */
+function assinatura(q){ return (q.tag||"")+"|"+(q.txt||"")+"|"+(q.fig||"")+"|"+(q.conta||"")+"|"+(q.frase||""); }
+function recentesDe(p){ if(!Array.isArray(p.recentes)) p.recentes=[]; return p.recentes; }
+function lembrar(p,qs){
+  var r=recentesDe(p);
+  qs.forEach(function(q){ r.push(assinatura(q)); });
+  if(r.length>LEMBRAR) p.recentes=r.slice(r.length-LEMBRAR);
+  p.atualizado=Date.now();
+}
 
 /* ---------- sincronização ---------- */
 var timerSync=null, sincronizando=false;
@@ -130,12 +255,69 @@ var NOME_VEIC=["patinete","bicicleta","motoca","carro","carro de corrida","aviã
 var POR_NIVEL=20;
 function estrelasDe(perfil){ var t=0; sessoesDe(perfil.id).forEach(function(s){t+=s.estrelas||0;}); return t; }
 function nivelFoguete(estrelas){ return Math.min(FOGUETES.length, Math.floor(estrelas/POR_NIVEL)+1); }
-function sequenciaDias(perfil){
+function diasComAtividade(perfil){
   var dias={}; sessoesDe(perfil.id).forEach(function(s){ dias[s.dia]=1; });
+  return dias;
+}
+/* A sequência conta os dias seguidos de estudo. Um dia perdido pode ser
+   coberto por um escudo, que a criança ganha a cada 5 dias seguidos —
+   ideia emprestada do "streak freeze" do Duolingo: perder a sequência
+   por um dia de imprevisto desanima mais do que ensina. */
+function sequenciaDias(perfil){
+  var dias=diasComAtividade(perfil);
+  var cobertos=(perfil.escudoUsado&&typeof perfil.escudoUsado==="object")?perfil.escudoUsado:{};
   var n=0, d=new Date();
   if(!dias[hojeISO(d)]) d.setDate(d.getDate()-1);
-  while(dias[hojeISO(d)]){ n++; d.setDate(d.getDate()-1); }
+  while(true){
+    var iso=hojeISO(d);
+    if(dias[iso]) n++;
+    else if(cobertos[iso]) { /* dia protegido pelo escudo: não conta, mas não quebra */ }
+    else break;
+    d.setDate(d.getDate()-1);
+  }
   return n;
+}
+function escudosDe(perfil){ return Math.max(0, Math.min(2, perfil.escudos||0)); }
+
+/* Chamado ao abrir o perfil e ao terminar uma missão:
+   gasta um escudo se ontem ficou em branco, e concede um novo
+   a cada 5 dias de sequência. */
+function atualizarEscudos(perfil){
+  var dias=diasComAtividade(perfil);
+  if(!Object.keys(dias).length) return;
+  perfil.escudoUsado=(perfil.escudoUsado&&typeof perfil.escudoUsado==="object")?perfil.escudoUsado:{};
+
+  /* protege os dias em branco entre o último estudo e hoje */
+  var d=new Date(); d.setDate(d.getDate()-1);
+  var guarda=0;
+  while(guarda++<3){
+    var iso=hojeISO(d);
+    if(dias[iso]||perfil.escudoUsado[iso]) break;
+    if(escudosDe(perfil)<=0) break;
+    /* só vale a pena gastar se havia sequência antes desse buraco */
+    var ontem=new Date(d); ontem.setDate(ontem.getDate()-1);
+    if(!dias[hojeISO(ontem)] && !perfil.escudoUsado[hojeISO(ontem)]) break;
+    perfil.escudos=escudosDe(perfil)-1;
+    perfil.escudoUsado[iso]=1;
+    perfil.atualizado=Date.now();
+    d.setDate(d.getDate()-1);
+  }
+
+  /* concede escudo a cada 5 dias de sequência, no máximo 2 guardados */
+  var seq=sequenciaDias(perfil);
+  var merecidos=Math.floor(seq/5);
+  if(merecidos>(perfil.escudosGanhos||0)){
+    perfil.escudos=Math.min(2, escudosDe(perfil)+(merecidos-(perfil.escudosGanhos||0)));
+    perfil.escudosGanhos=merecidos;
+    perfil.atualizado=Date.now();
+  }
+}
+
+/* ---------- meta do dia ---------- */
+function metaDe(perfil){ var m=perfil.meta; return (m>=1&&m<=6)?m:META_PADRAO; }
+function feitasHoje(perfil){
+  var hoje=hojeISO();
+  return sessoesDe(perfil.id).filter(function(s){return s.dia===hoje;}).length;
 }
 var MEDALHAS=[
   {e:"🌱",nome:"Primeira missão",tem:function(ss){return ss.length>=1;}},
@@ -145,8 +327,17 @@ var MEDALHAS=[
   {e:"🗣️",nome:"Leu em voz alta 5 vezes",tem:function(ss){return ss.filter(function(s){return s.tipo==="voz";}).length>=5;}},
   {e:"🌎",nome:"Todas as matérias",tem:function(ss){var a={};ss.forEach(function(s){a[s.area]=1;});return ["leitura","mat","racio","ingles","ciencias"].every(function(k){return a[k];});}},
   {e:"⭐",nome:"100 estrelas",tem:function(ss,p){return estrelasDe(p)>=100;}},
-  {e:"🏆",nome:"30 missões",tem:function(ss){return ss.length>=30;}}
+  {e:"🏆",nome:"30 missões",tem:function(ss){return ss.length>=30;}},
+  {e:"🔁",nome:"Revisou o que errou",tem:function(ss,p){return (p.revisoesFeitas||0)>=10;}},
+  {e:"🛡️",nome:"7 dias seguidos",tem:function(ss,p){return sequenciaDias(p)>=7;}},
+  {e:"🌟",nome:"3 estrelas 5 vezes",tem:function(ss){return ss.filter(function(s){return s.estrelas>=3;}).length>=5;}},
+  {e:"🧠",nome:"100 missões",tem:function(ss){return ss.length>=100;}}
 ];
+function medalhasConquistadas(p){
+  var ss=sessoesDe(p.id);
+  return MEDALHAS.filter(function(m){ try{ return m.tem(ss,p); }catch(e){ return false; } })
+                 .map(function(m){ return m.nome; });
+}
 
 /* =========================================================
    telas
@@ -162,6 +353,7 @@ function mostrar(id){
   $("kid").hidden = !naCrianca;
   $("btn-trocar").hidden = !naCrianca || emMissao;
   $("btn-letra").hidden = !naCrianca || emMissao;
+  $("btn-som").hidden = (id==="tela-pais"||id==="tela-pin"||id==="tela-crianca");
   $("btn-pais").hidden = emMissao;
   $("btn-pais").classList.toggle("on", id==="tela-pais");
   $("btn-pais").firstChild.className = "sinal" + (window.SYNC&&SYNC.estado()==="ok"?" ok":(window.SYNC&&SYNC.configurado?" off":""));
@@ -193,7 +385,9 @@ function pintarPerfis(){
 function abrirPerfil(id){
   atualPerfil=acharPerfil(id);
   if(!atualPerfil) return;
-  dados.cfg.ultimo=id; salvar();
+  dados.cfg.ultimo=id;
+  atualizarEscudos(atualPerfil);
+  salvar();
   $("kid").classList.toggle("bastao", (atualPerfil.letra||"bastao")==="bastao");
   $("btn-letra").textContent = (atualPerfil.letra||"bastao")==="bastao" ? "AA letra bastão" : "Aa letra escolar";
   pintarHome();
@@ -227,13 +421,32 @@ function pintarHome(){
     med.appendChild(s);
   });
 
-  $("k-hoje").textContent=ss.filter(function(s){return s.dia===hoje;}).length;
+  var hojeN=ss.filter(function(s){return s.dia===hoje;}).length;
+  $("k-hoje").textContent=hojeN;
   $("k-estrelas").textContent=estrelas;
-  $("k-seq").textContent=seq;
+  $("k-seq").textContent=seq+(escudosDe(p)?" 🛡️":"");
   $("k-total").textContent=ss.length;
 
+  /* meta do dia: regularidade rende mais que uma sessão longa */
+  var meta=metaDe(p), pronto=hojeN>=meta;
+  $("h-meta-fill").style.width=Math.min(100,hojeN/meta*100)+"%";
+  $("h-meta-txt").textContent = pronto
+    ? ("Meta do dia cumprida! "+hojeN+" de "+meta+" 🎉")
+    : ("Meta de hoje: "+hojeN+" de "+meta+" missõe"+(meta>1?"s":"")+"");
+  $("h-meta").classList.toggle("pronto",pronto);
+
+  /* quantas revisões estão esperando */
+  var nrev=totalRevisoes(p);
+  var avisoRev=$("h-revisao");
+  if(nrev){
+    avisoRev.hidden=false;
+    avisoRev.textContent="🔁 "+nrev+(nrev===1?" coisa":" coisas")+" para revisar — entram sozinhas nas próximas missões.";
+  }else avisoRev.hidden=true;
+
   var host=$("missoes"); host.innerHTML="";
-  var feitasHoje={}; ss.forEach(function(s){ if(s.dia===hoje) feitasHoje[s.area]=1; });
+  var jaFez={}, revPorArea={};
+  ss.forEach(function(s){ if(s.dia===hoje) jaFez[s.area]=1; });
+  revisoesVencidas(p,null).forEach(function(r){ revPorArea[r.area]=(revPorArea[r.area]||0)+1; });
   Q.ordem.forEach(function(k){
     var a=Q.areas[k];
     var b=el("button","mcard m-"+k); b.type="button";
@@ -243,10 +456,13 @@ function pintarHome(){
     box.appendChild(el("span","ds kt",a.ds));
     b.appendChild(box);
     b.appendChild(el("span","go kt", k==="voz"?"Ler agora →":"Começar →"));
-    if(feitasHoje[k]) b.appendChild(el("span","feito","✅"));
+    if(jaFez[k]) b.appendChild(el("span","feito","✅"));
     else if(sug.indexOf(k)>=0) b.appendChild(el("span","tag","hoje"));
-    if(k!=="voz") b.appendChild(el("span","nv","nível "+nivelDaArea(p,k)));
-    b.addEventListener("click",function(){ k==="voz"?abrirVoz():abrirMissao(k); });
+    if(k!=="voz"){
+      b.appendChild(el("span","nv","nível "+nivelDaArea(p,k)));
+      if(revPorArea[k]) b.appendChild(el("span","rev","🔁 "+revPorArea[k]));
+    }
+    b.addEventListener("click",function(){ if(somLigado()) SOM.toque(); k==="voz"?abrirVoz():abrirMissao(k); });
     host.appendChild(b);
   });
 }
@@ -256,26 +472,50 @@ function pintarHome(){
    ========================================================= */
 var atual=null;
 
+/* Monta as 8 perguntas da missão:
+   - começa pelas revisões vencidas (o que ela errou antes), no máximo 3;
+   - completa com perguntas novas da área, no nível atual de cada habilidade;
+   - evita as perguntas que ela acabou de ver, para não decorar a resposta. */
 function montarMissao(area,perfil){
-  var tipos=Q.tiposDaArea(area), out=[], usados={}, g=0, i=0;
-  var ordem=shuffle(tipos);
-  while(out.length<NQ && g++<300){
-    var t=ordem[i % ordem.length]; i++;
-    var nv=nivelDe(perfil,t.tag);
-    var q;
-    try{ q=t.fn(nv); }catch(e){ continue; }
-    if(!q||!q.ops) continue;
-    q.tag=t.tag; q.area=area; q.nivel=nv;
-    var chave=q.txt+"|"+(q.fig||"")+"|"+(q.conta||"")+"|"+(q.frase||"");
-    if(usados[chave]) continue;
+  var out=[], usados={};
+  var recentes={}; recentesDe(perfil).forEach(function(a){ recentes[a]=1; });
+
+  function tentarAdicionar(tag,nv,ehRevisao,aceitarRepetida){
+    var q=Q.gerar(tag,nv);
+    if(!q) return false;
+    var chave=assinatura(q);
+    if(usados[chave]) return false;
+    if(!aceitarRepetida && recentes[chave]) return false;
     usados[chave]=1;
+    q.revisao=!!ehRevisao;
     out.push(q);
+    return true;
   }
-  return out;
+
+  /* 1. revisões (elas vêm primeiro, então out.length é quantas já entraram) */
+  var fila=revisoesVencidas(perfil,area);
+  for(var k=0;k<fila.length && out.length<Math.min(MAX_REVISAO,NQ);k++){
+    var tagR=fila[k].tag, nvR=nivelDe(perfil,tagR), tent=0;
+    while(tent++<25 && !tentarAdicionar(tagR,nvR,true,tent>15)){}
+  }
+
+  /* 2. perguntas novas da área */
+  var tipos=Q.tiposDaArea(area);
+  if(!tipos.length) return out;
+  var ordem=shuffle(tipos), i=0, voltas=0;
+  while(out.length<NQ && voltas++<400){
+    var t=ordem[i % ordem.length]; i++;
+    /* depois de dar muitas voltas, aceita repetir uma pergunta recente
+       em vez de devolver uma missão curta */
+    tentarAdicionar(t.tag, nivelDe(perfil,t.tag), false, voltas>200);
+  }
+  return shuffle(out);
 }
 
 function abrirMissao(area){
-  atual={area:area,tipo:"quiz",qs:montarMissao(area,atualPerfil),i:0,acertos:0,tags:{},inicio:Date.now()};
+  var qs=montarMissao(area,atualPerfil);
+  if(!qs.length){ pintarHome(); mostrar("tela-home"); return; }
+  atual={area:area,tipo:"quiz",qs:qs,i:0,acertos:0,tags:{},inicio:Date.now()};
   $("tela-missao").style.setProperty("--acc","var(--"+area+")");
   mostrar("tela-missao");
   pintarQuestao();
@@ -301,6 +541,7 @@ function pintarQuestao(){
 
   var tag=el("div","qtag");
   tag.appendChild(el("span",null,q.tag));
+  if(q.revisao) tag.appendChild(el("em","rev","🔁 revisão"));
   if(q.nivel>1) tag.appendChild(el("em",null,"nível "+q.nivel));
   card.appendChild(tag);
 
@@ -321,6 +562,7 @@ function pintarQuestao(){
     var b=el("button","op"+(q.emoji?" emoji":""),o.t);
     b.type="button";
     if(!q.emoji) b.classList.add("kt");
+    if(q.opsLang==="en") b.lang="en";
     b.addEventListener("click",function(){ responder(q,o,b,ops,card); });
     ops.appendChild(b);
   });
@@ -339,12 +581,22 @@ function pintarPreview(q,card){
   var c=el("div","contagem",String(q.preview.seg));
   card.appendChild(c);
   var n=q.preview.seg;
-  var t=setInterval(function(){
+  pararContagem();
+  timerPreview=setInterval(function(){
     n--;
-    if(n<=0){ clearInterval(t); q.previewFeito=true; if(!$("tela-missao").hidden) pintarQuestao(); }
-    else c.textContent=String(n);
+    if(n<=0){
+      pararContagem();
+      q.previewFeito=true;
+      /* só repinta se a criança continua nesta mesma pergunta */
+      if(!$("tela-missao").hidden && atual && atual.qs[atual.i]===q) pintarQuestao();
+    }else{
+      c.textContent=String(n);
+      if(somLigado()) SOM.tique();
+    }
   },1000);
 }
+var timerPreview=null;
+function pararContagem(){ if(timerPreview){ clearInterval(timerPreview); timerPreview=null; } }
 
 var ELOGIOS=["Muito bem!","É isso aí!","Acertou!","Boa!","Mandou bem!","Perfeito!"];
 
@@ -354,6 +606,14 @@ function responder(q,o,btn,ops,card){
   q.resultado=certo;
   atual.tags[q.tag]=atual.tags[q.tag]||{c:0,e:0};
   if(certo){ atual.acertos++; atual.tags[q.tag].c++; } else atual.tags[q.tag].e++;
+
+  /* alimenta a fila de revisão na hora */
+  if(atualPerfil){
+    if(certo){
+      anotarAcerto(atualPerfil,q.tag);
+      if(q.revisao) atualPerfil.revisoesFeitas=(atualPerfil.revisoesFeitas||0)+1;
+    }else anotarErro(atualPerfil,q.tag);
+  }
 
   Array.prototype.forEach.call(ops.children,function(c,idx){
     if(q.ops[idx].ok) c.classList.add("certa");
@@ -367,9 +627,24 @@ function responder(q,o,btn,ops,card){
   pintarDots();
 
   if(certo){
+    if(somLigado()) SOM.acerto();
     falar(pick(["Muito bem","Isso","Boa"]));
     setTimeout(avancar,1100);
   }else{
+    if(somLigado()) SOM.erro();
+    /* errar sem entender não ensina nada: aqui aparece o porquê */
+    if(q.porque){
+      var pq=el("div","porque");
+      pq.appendChild(el("b",null,"Por quê: "));
+      pq.appendChild(el("span","kt",q.porque));
+      var sp2=el("button","speak mini","🔊"); sp2.type="button"; sp2.setAttribute("aria-label","Ouvir a explicação");
+      sp2.addEventListener("click",function(){ falar(q.porque); });
+      pq.appendChild(sp2);
+      /* a explicação vem antes do botão Continuar, senão a criança
+         clica em seguir sem chegar a ler o porquê */
+      card.insertBefore(pq,ret);
+      falar(q.porque);
+    }
     var b=el("button","btn","Continuar"); b.type="button";
     b.addEventListener("click",avancar);
     ret.appendChild(b);
@@ -424,8 +699,13 @@ function terminar(){
   dados.sessoes.push(s);
   atual.sessao=s;
 
+  var medalhasAntes = atual.tipo==="voz" ? [] : medalhasConquistadas(atualPerfil);
+  if(atual.qs.length) lembrar(atualPerfil,atual.qs);
   var mudou = atual.tipo==="voz" ? [] : recalcularNiveis(atualPerfil);
+  atualizarEscudos(atualPerfil);
   salvar();
+  var medalhasDepois = atual.tipo==="voz" ? [] : medalhasConquistadas(atualPerfil);
+  var novaMedalha = medalhasDepois.filter(function(m){ return medalhasAntes.indexOf(m)<0; });
 
   $("f-estrelas").textContent="★★★☆☆☆".slice(3-estrelas,6-estrelas);
   var msg,placar;
@@ -440,13 +720,39 @@ function terminar(){
 
   var subiu=mudou.filter(function(m){return m.dir>0;});
   var box=$("f-subiu");
-  if(subiu.length){
+  box.innerHTML="";
+  var avisos=[];
+  if(subiu.length) avisos.push("Ficou mais difícil: "+subiu.map(function(m){return m.tag.toLowerCase();}).join(", ")+" 🎉");
+  novaMedalha.forEach(function(nome){ avisos.push("Medalha nova: "+nome+" 🏅"); });
+  if(avisos.length){
     box.hidden=false;
-    box.textContent="Ficou mais difícil: "+subiu.map(function(m){return m.tag.toLowerCase();}).join(", ")+" 🎉";
+    avisos.forEach(function(t){ box.appendChild(el("div",null,t)); });
   } else box.hidden=true;
 
+  if(somLigado()){
+    if(subiu.length||novaMedalha.length) SOM.conquista();
+    else SOM.fim(estrelas);
+  }
+  if(estrelas>=3) confete();
   falar(msg);
   mostrar("tela-fim");
+}
+
+/* ---------- confete simples, só com CSS ---------- */
+function confete(){
+  if(typeof document==="undefined") return;
+  var host=$("confete"); if(!host) return;
+  host.innerHTML="";
+  var cores=["#F5B301","#2559C9","#0E8F63","#D2650B","#C0357A","#7431D4"];
+  for(var i=0;i<26;i++){
+    var p=el("i");
+    p.style.left=(Math.random()*100)+"%";
+    p.style.background=cores[i%cores.length];
+    p.style.animationDelay=(Math.random()*0.5).toFixed(2)+"s";
+    p.style.animationDuration=(1.6+Math.random()*1.2).toFixed(2)+"s";
+    host.appendChild(p);
+  }
+  setTimeout(function(){ if(host) host.innerHTML=""; },3400);
 }
 
 /* =========================================================
@@ -535,7 +841,7 @@ function pintarAbas(){
 }
 
 function sessoesDaAba(){
-  var ss = abaAtual==="todos" ? dados.sessoes.slice() : sessoesDe(abaAtual);
+  var ss = abaAtual==="todos" ? sessoesVivas() : sessoesDe(abaAtual);
   return ss.sort(function(a,b){return b.ts-a.ts;});
 }
 
@@ -682,9 +988,8 @@ function pintarRelatorio(){
     var ss=sessoesDe(p.id);
     var semana=ss.filter(function(s){return s.ts>=corte;});
     if(!semana.length){
-      var vazio=el("p");
-      vazio.innerHTML="<b>"+p.nome+"</b> não fez nenhuma atividade nos últimos 7 dias.";
-      box.appendChild(vazio); algo=true; return;
+      box.appendChild(frase(neg(p.nome)," não fez nenhuma atividade nos últimos 7 dias."));
+      algo=true; return;
     }
     algo=true;
     var quiz=semana.filter(function(s){return s.tipo!=="voz";});
@@ -698,31 +1003,40 @@ function pintarRelatorio(){
     var fracos=habilidades(quiz).filter(function(x){return x.pc<75;}).slice(0,2);
     var focoM=media(semana.map(function(s){return s.foco;}));
 
-    var p1=el("p");
-    p1.innerHTML="<b>"+p.nome+"</b> fez <b>"+semana.length+"</b> atividade"+(semana.length>1?"s":"")+
-      " em <b>"+nDias+"</b> dia"+(nDias>1?"s":"")+" desta semana, com <b>"+pc+"%</b> de acerto"+
-      (pca!=null ? (pc>pca+4?" — subiu "+(pc-pca)+" pontos em relação à semana passada.":(pc<pca-4?" — caiu "+(pca-pc)+" pontos em relação à semana passada.":" — estável em relação à semana passada.")) : ".");
-    box.appendChild(p1);
+    var comparacao = pca==null ? "." :
+      (pc>pca+4 ? " — subiu "+(pc-pca)+" pontos em relação à semana passada." :
+      (pc<pca-4 ? " — caiu "+(pca-pc)+" pontos em relação à semana passada." :
+                  " — estável em relação à semana passada."));
+    box.appendChild(frase(neg(p.nome)," fez ",neg(semana.length)," atividade"+(semana.length>1?"s":""),
+      " em ",neg(nDias)," dia"+(nDias>1?"s":"")+" desta semana, com ",neg(pc+"%")," de acerto",comparacao));
 
-    var p2=el("p");
     if(fracos.length){
-      p2.innerHTML="Para reforçar nos próximos dias: <b>"+fracos.map(function(x){return x.nome.toLowerCase()+" ("+x.pc+"%)";}).join("</b> e <b>")+"</b>.";
+      var p2=el("p");
+      p2.appendChild(document.createTextNode("Para reforçar nos próximos dias: "));
+      fracos.forEach(function(x,i){
+        if(i) p2.appendChild(document.createTextNode(" e "));
+        p2.appendChild(el("b",null,x.nome.toLowerCase()+" ("+x.pc+"%)"));
+      });
+      p2.appendChild(document.createTextNode("."));
+      box.appendChild(p2);
     }else{
-      p2.innerHTML="Nenhuma habilidade travando esta semana. Dá para puxar um pouco mais o tempo dos blocos.";
+      box.appendChild(frase("Nenhuma habilidade travando esta semana. Dá para puxar um pouco mais o tempo dos blocos."));
     }
-    box.appendChild(p2);
+
+    var nrev=totalRevisoes(p);
+    if(nrev) box.appendChild(frase("Na fila de revisão: ",neg(nrev),
+      nrev===1?" habilidade que ele errou e vai reaparecer nas próximas missões."
+             :" habilidades que ele errou e vão reaparecer nas próximas missões."));
 
     if(focoM!=null){
-      var p3=el("p");
-      p3.innerHTML="Concentração pelas suas avaliações: <b>"+rot(focoM,["muito disperso","oscilando","focado até o fim"])+"</b>."+
-        (focoM<2 ? " Vale encurtar os blocos e garantir a pausa de movimento no meio." : "");
-      box.appendChild(p3);
+      box.appendChild(frase("Concentração pelas suas avaliações: ",
+        neg(rot(focoM,["muito disperso","oscilando","focado até o fim"])),".",
+        focoM<2 ? " Vale encurtar os blocos e garantir a pausa de movimento no meio." : ""));
     }
 
     if(nDias<3){
-      var p4=el("p");
-      p4.innerHTML="A regularidade é o que mais pesa nessa idade: <b>3 a 5 dias por semana</b> rende mais que uma sessão longa só.";
-      box.appendChild(p4);
+      box.appendChild(frase("A regularidade é o que mais pesa nessa idade: ",
+        neg("3 a 5 dias por semana")," rende mais que uma sessão longa só."));
     }
   });
 
@@ -756,6 +1070,7 @@ function editarCrianca(id){
   $("cr-titulo").textContent = editando ? ("Editar "+editando.nome) : "Nova criança";
   $("cr-nome").value = editando?editando.nome:"";
   $("cr-letra").value = editando?(editando.letra||"bastao"):"bastao";
+  $("cr-meta").value = String(editando?metaDe(editando):META_PADRAO);
   avatarSel = editando?(editando.avatar||"🚀"):"🚀";
   $("cr-apagar").hidden = !editando;
   var host=$("cr-avatares"); host.innerHTML="";
@@ -776,10 +1091,13 @@ function salvarCrianca(){
   if(!nome){ $("cr-nome").focus(); return; }
   if(editando){
     editando.nome=nome; editando.avatar=avatarSel; editando.letra=$("cr-letra").value;
+    editando.meta=Number($("cr-meta").value)||META_PADRAO;
     editando.atualizado=Date.now();
   }else{
     dados.perfis.push({id:uid(),nome:nome,avatar:avatarSel,letra:$("cr-letra").value,
-      niveis:{},estrelas:0,removido:false,atualizado:Date.now()});
+      meta:Number($("cr-meta").value)||META_PADRAO,
+      niveis:{},revisao:{},recentes:[],escudos:0,escudosGanhos:0,escudoUsado:{},
+      estrelas:0,removido:false,atualizado:Date.now()});
   }
   salvar();
   voltarDeCrianca();
@@ -846,9 +1164,12 @@ function pintarSync(){
     return;
   }
   var g=SYNC.grupo();
-  txt.innerHTML="Sincronizando como <b>"+SYNC.email()+"</b> na família <b>"+(g?g.nome:"")+"</b>. Tudo o que as crianças fizerem aparece nos outros aparelhos.";
+  txt.textContent="";
+  txt.appendChild(frase("Sincronizando como ",neg(SYNC.email())," na família ",neg(g?g.nome:""),
+    ". Tudo o que as crianças fizerem aparece nos outros aparelhos."));
   var cod=el("div","caixa"); cod.style.marginTop="0";
-  cod.innerHTML="<h4>Código para convidar</h4><p>Passe este código para os outros pais entrarem na mesma família:</p>";
+  cod.appendChild(el("h4",null,"Código para convidar"));
+  cod.appendChild(el("p",null,"Passe este código para os outros pais entrarem na mesma família:"));
   var codigo=el("div","contas"); codigo.style.fontSize="1.6rem"; codigo.textContent=g?g.codigo:"";
   cod.appendChild(codigo);
   area.appendChild(cod);
@@ -890,22 +1211,47 @@ $("btn-letra").addEventListener("click",function(){
   $("btn-letra").textContent = atualPerfil.letra==="bastao" ? "AA letra bastão" : "Aa letra escolar";
   salvar();
 });
-$("btn-trocar").addEventListener("click",function(){ atualPerfil=null; pintarPerfis(); mostrar("tela-perfis"); });
+function pintarBotaoSom(){
+  var b=$("btn-som"), on=somLigado();
+  b.textContent = on ? "🔊" : "🔇";
+  b.setAttribute("aria-pressed", on?"true":"false");
+  b.setAttribute("aria-label", on?"Sons ligados. Toque para desligar":"Sons desligados. Toque para ligar");
+  SOM.ligar(on);
+}
+$("btn-som").addEventListener("click",function(){
+  dados.cfg.som = !somLigado();
+  if(!somLigado()) calarVoz();
+  salvar();
+  pintarBotaoSom();
+  if(somLigado()) SOM.toque();
+});
+$("btn-trocar").addEventListener("click",function(){ calarVoz(); pararContagem(); atualPerfil=null; pintarPerfis(); mostrar("tela-perfis"); });
 $("btn-pais").addEventListener("click",function(){
   if(!$("tela-pais").hidden){ dados.cfg.entrouPais=false; pintarPerfis(); mostrar("tela-perfis"); return; }
   $("pin-in").value=""; $("pin-aviso").textContent="";
   mostrar("tela-pin");
   setTimeout(function(){ $("pin-in").focus(); },50);
 });
+var tentativasPin=0;
 function tentarPin(){
   if($("pin-in").value===String(dados.cfg.pin||"1234")){
+    tentativasPin=0;
     dados.cfg.entrouPais=true;
     pintarPais(); mostrar("tela-pais");
     if(window.SYNC&&SYNC.estado()==="ok") sincronizarAgora();
   }else{
-    $("pin-aviso").textContent="PIN errado. O padrão é 1234, e dá para trocar dentro da área dos adultos.";
+    tentativasPin++;
+    $("pin-aviso").textContent = tentativasPin>=3
+      ? "PIN errado. Se você é o adulto e esqueceu, o LEIA-ME explica como recuperar."
+      : "PIN errado.";
     $("pin-aviso").style.color="var(--quase)";
     $("pin-in").value="";
+    /* uma pausa curta depois de várias tentativas: a criança desiste
+       de tentar na sorte sem que o adulto fique travado de verdade */
+    if(tentativasPin>=4){
+      $("pin-ok").disabled=true; $("pin-in").disabled=true;
+      setTimeout(function(){ $("pin-ok").disabled=false; $("pin-in").disabled=false; $("pin-in").focus(); },3000);
+    }
   }
 }
 $("pin-ok").addEventListener("click",tentarPin);
@@ -913,7 +1259,7 @@ $("pin-in").addEventListener("keydown",function(e){ if(e.key==="Enter") tentarPi
 $("pin-volta").addEventListener("click",function(){
   if(atualPerfil){ pintarHome(); mostrar("tela-home"); } else { pintarPerfis(); mostrar("tela-perfis"); }
 });
-$("sair").addEventListener("click",function(){ pintarHome(); mostrar("tela-home"); });
+$("sair").addEventListener("click",function(){ calarVoz(); pararContagem(); pintarHome(); mostrar("tela-home"); });
 $("f-voltar").addEventListener("click",function(){ pintarHome(); mostrar("tela-home"); });
 $("f-pai").addEventListener("click",function(){ abrirAval(atual.sessao); });
 $("aval-pular").addEventListener("click",function(){
@@ -944,7 +1290,7 @@ $("cfg-pin").addEventListener("input",function(){
 });
 
 $("exp").addEventListener("click",function(){
-  baixarArquivo("missoes-"+hojeISO()+".json",JSON.stringify({app:"missoes",versao:2,perfis:dados.perfis,sessoes:dados.sessoes},null,1));
+  baixarArquivo("missoes-"+hojeISO()+".json",JSON.stringify({app:"missoes",versao:3,perfis:dados.perfis,sessoes:dados.sessoes},null,1));
   $("arq-aviso").textContent="Arquivo salvo nos downloads.";
   $("arq-aviso").style.color="var(--ok)";
 });
@@ -974,8 +1320,16 @@ $("limpar").addEventListener("click",function(){
   var b=this;
   if(!limparArmado){ limparArmado=true; b.textContent="Tem certeza? Clique de novo"; setTimeout(function(){limparArmado=false;b.textContent="Apagar todo o histórico";},4000); return; }
   limparArmado=false; b.textContent="Apagar todo o histórico";
-  dados.sessoes=[];
-  dados.perfis.forEach(function(p){ p.niveis={}; p.atualizado=Date.now(); });
+  /* marca como apagado em vez de sumir com o registro: assim a exclusão
+     também chega aos outros aparelhos, em vez de voltar no próximo sync */
+  var agora=Date.now();
+  dados.sessoes.forEach(function(s){
+    s.removido=true; s.tags={}; s.obs=""; s.texto=""; s.atualizado=agora;
+  });
+  dados.perfis.forEach(function(p){
+    p.niveis={}; p.revisao={}; p.recentes=[]; p.revisoesFeitas=0;
+    p.escudos=0; p.escudosGanhos=0; p.escudoUsado={}; p.atualizado=agora;
+  });
   salvar(); pintarPais();
 });
 
@@ -983,6 +1337,7 @@ $("limpar").addEventListener("click",function(){
    início
    ========================================================= */
 carregar();
+pintarBotaoSom();
 if(window.SYNC){
   SYNC.aoMudar(function(){ if(!$("tela-pais").hidden) pintarSync(); });
   var voltou=SYNC.processarRetorno();

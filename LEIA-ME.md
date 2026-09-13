@@ -3,7 +3,12 @@
 App para crianças de 6 a 8 anos praticarem leitura, matemática, raciocínio, inglês e ciências.
 A criança faz as atividades sozinha; o adulto avalia no fim e acompanha o desempenho num painel.
 
-Funciona no computador e no celular, instala como aplicativo e roda offline.
+São 64 habilidades, cada uma em 3 níveis que se ajustam sozinhos ao ritmo da criança, com revisão
+espaçada do que ela errou e explicação em toda resposta errada.
+
+Funciona no computador e no celular, instala como aplicativo e roda offline. Não tem anúncio,
+não tem compra, não manda dado nenhum para lugar nenhum — a não ser que você ligue a sincronização
+no seu próprio banco.
 
 ---
 
@@ -109,7 +114,7 @@ As avaliações registram quem avaliou.
 
 1. Abre o app e toca no próprio avatar.
 2. Escolhe uma missão. Cada uma tem 8 perguntas com botão de ouvir o enunciado.
-3. Erra sem punição: a resposta certa acende e ela segue.
+3. Erra sem punição: a resposta certa acende, o app explica o porquê e ela segue.
 4. No fim ganha estrelas, e o veículo evolui de patinete até nave espacial.
 
 **Para o adulto**
@@ -117,13 +122,43 @@ As avaliações registram quem avaliou.
 1. Ao terminar, a criança clica em **Chamar o adulto**.
 2. Você marca três coisas: se fez sozinho, como ficou a concentração e uma observação livre.
 3. Se não estiver por perto, a atividade fica na fila de *esperando avaliação*.
-4. Em **Adultos** você acompanha acerto por área, **o que reforçar** e o **relatório da semana**.
+4. Em **Adultos** você acompanha acerto por área, **o que reforçar**, a fila de revisão e o **relatório da semana**.
 
 **Dificuldade que se ajusta sozinha**
 
-Cada habilidade — sílaba inicial, subtração, memória, cores em inglês e outras 30 — tem três níveis.
-Acima de 85% de acerto nas últimas tentativas o nível sobe; abaixo de 50% ele desce.
-Isso acontece por habilidade, não por matéria: dá para estar no nível 3 de soma e no 1 de subtração.
+Cada uma das 64 habilidades — sílaba inicial, subtração, memória, cores em inglês, espaço, Brasil
+e assim por diante — tem três níveis. Acima de 85% de acerto nas últimas tentativas o nível sobe;
+abaixo de 50% ele desce. Isso acontece por habilidade, não por matéria: dá para estar no nível 3 de
+soma e no 1 de subtração.
+
+**Revisão espaçada: o erro volta até virar aprendizado**
+
+Errar uma vez e nunca mais ver aquilo não ensina. Por isso o app usa o mesmo princípio do Anki e das
+caixinhas de Leitner: quando a criança erra uma habilidade, ela entra numa fila e reaparece já na
+próxima missão daquela matéria, marcada com 🔁. A cada acerto o intervalo aumenta — 1 dia, 3 dias,
+7 dias, 16 dias — e depois de acertar várias vezes seguidas ela sai da fila.
+
+Cada missão traz no máximo 3 perguntas de revisão, para não virar só correção de erro. A tela inicial
+mostra quantas coisas estão na fila, e o painel dos adultos também.
+
+**Explicação quando erra**
+
+Toda pergunta tem um "por quê". Quando a criança erra, além de acender a resposta certa o app mostra
+e lê a explicação — `9 − 7 = 2`, `BORBOLETA se separa assim: bor - bo - le - ta` — antes de liberar
+o botão de continuar.
+
+**Meta do dia e escudo**
+
+Cada criança tem uma meta de missões por dia (padrão: 2, dá para mudar em Adultos → Crianças).
+A cada 5 dias seguidos ela ganha um escudo 🛡️; se um dia ficar em branco, o escudo cobre aquele dia
+e a sequência não quebra. Guarda no máximo 2. A ideia é a mesma do *streak freeze* do Duolingo:
+perder a sequência por causa de um imprevisto desanima mais do que ensina.
+
+**Sons**
+
+O app faz os próprios sons (não tem nenhum arquivo de áudio: é tudo gerado pelo navegador, então
+continua leve e funcionando offline) e vibra no celular. O botão 🔊 no topo liga e desliga tudo,
+inclusive a voz — útil em sala de espera, ônibus ou na hora de dormir.
 
 ---
 
@@ -134,13 +169,23 @@ Isso acontece por habilidade, não por matéria: dá para estar no nível 3 de s
 | Trocar o PIN dos adultos | dentro do app, em Adultos → Ajustes |
 | Mudar entre LETRA BASTÃO e letra escolar | botão no topo, por criança |
 | Adicionar ou remover crianças | Adultos → Crianças |
+| Mudar a meta de missões por dia | dentro do app, em Adultos → Crianças |
+| Ligar e desligar os sons | botão 🔊 no topo |
 | Acrescentar palavras, contas ou perguntas | `js/questoes.js` |
 | Mudar cores e tamanhos | `estilo.css` |
 | Mudar quantas perguntas tem cada missão | `js/app.js`, constante `NQ` |
+| Mudar quantas revisões cabem numa missão | `js/app.js`, constante `MAX_REVISAO` |
+| Mudar os intervalos da revisão espaçada | `js/app.js`, constante `ESPERA` |
 | Mudar quantas estrelas sobem de nível | `js/app.js`, constante `POR_NIVEL` |
+| Mudar os sons | `js/som.js` |
 
-Depois de qualquer alteração, aumente o número em `var CACHE = "missoes-v1"` no arquivo `sw.js`
-(por exemplo para `missoes-v2`) e publique. Isso força os aparelhos já instalados a pegarem a versão nova.
+**Esqueceu o PIN dos adultos?** Ele fica guardado no próprio navegador. Abra o app, pressione F12
+(ou, no celular, abra num computador), vá em *Application → Local Storage*, procure a chave
+`missoes.dados.v2` e leia o campo `cfg.pin`. Se preferir começar do zero, apagar essa chave zera o
+app inteiro — inclusive o histórico, então salve o arquivo antes.
+
+Depois de qualquer alteração, aumente o número em `var CACHE = "missoes-v2"` no arquivo `sw.js`
+(por exemplo para `missoes-v3`) e publique. Isso força os aparelhos já instalados a pegarem a versão nova.
 
 ---
 
@@ -154,8 +199,10 @@ manifest.webmanifest       faz o navegador tratar como aplicativo
 sw.js                      cache offline
 schema.sql                 banco de dados, para colar no Supabase
 js/questoes.js             o banco de questões, por habilidade e nível
-js/app.js                  telas, perfis, níveis, recompensas, painel
+js/app.js                  telas, perfis, níveis, revisão, recompensas, painel
+js/som.js                  sons do jogo, gerados pelo navegador
 js/sync.js                 sincronização entre aparelhos
+testes/testar.js           confere o banco de questões inteiro
 icones/                    ícones do app
 fontes/                    fonte escolar Andika (SIL Open Font License)
 ```
@@ -163,7 +210,36 @@ fontes/                    fonte escolar Andika (SIL Open Font License)
 Sem sincronização, tudo fica no navegador do aparelho. Em Adultos → Ajustes há
 **Salvar histórico em arquivo** e **Abrir arquivo de histórico** para levar os dados na mão.
 
+## 7. Mexer no banco de questões sem quebrar nada
+
+O arquivo `js/questoes.js` tem 64 habilidades. Cada uma é uma função que recebe o nível (1, 2 ou 3)
+e devolve uma questão. Depois de mexer nele, rode:
+
+```bash
+node testes/testar.js
+```
+
+O teste sorteia 2.000 questões de cada habilidade em cada nível e confere que todas têm enunciado,
+exatamente uma resposta certa, nenhuma alternativa repetida ou vazia, explicação de erro, e variedade
+suficiente para a criança não decorar. Ele roda sozinho a cada `push` pelo GitHub Actions.
+
+> Se acrescentar uma habilidade nova, o `tag` dela precisa ser único — é a chave do histórico de
+> nível de cada criança. O teste reclama se houver repetição.
+
+
 ---
+
+## De onde vieram as ideias
+
+Este app é caseiro, mas as mecânicas não foram inventadas do zero:
+
+- **Revisão espaçada** — caixas de [Leitner](https://pt.wikipedia.org/wiki/Sistema_Leitner) e o
+  agendador [FSRS](https://github.com/open-spaced-repetition/free-spaced-repetition-scheduler)
+  usado no Anki. Aqui numa versão bem simplificada, adequada a criança de 6 anos.
+- **Níveis por habilidade e progressão suave** — o [GCompris](https://github.com/gcompris/GCompris-qt),
+  suíte educativa livre do KDE, com mais de 180 atividades para crianças de 2 a 10 anos.
+- **Meta diária, sequência e escudo** — o modelo de hábito do Duolingo (*daily goal* e *streak freeze*).
+- **Domínio por habilidade, não por matéria** — o jeito da Khan Academy de mostrar progresso.
 
 ## Créditos
 
