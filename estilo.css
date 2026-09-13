@@ -320,9 +320,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 
 /* selo de revisão na pergunta e no cartão da missão */
 .qtag em.rev{color:var(--racio);font-weight:700;letter-spacing:.04em}
+/* canto de baixo à esquerda é onde fica o "Começar →": o selo de revisão
+   vai para cima, ao lado do emoji da matéria */
 .mcard .rev{
-  position:absolute;bottom:13px;left:14px;font-size:.72rem;font-weight:700;color:var(--racio);
+  position:absolute;top:11px;left:52px;font-size:.72rem;font-weight:700;color:var(--racio);
+  background:var(--surface-2);border-radius:99px;padding:2px 8px;
 }
+.mcard.m-voz .rev{left:auto;right:11px;top:11px}
 
 /* ---------- explicação depois do erro ---------- */
 .porque{

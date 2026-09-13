@@ -119,10 +119,16 @@ function conferir(condicao,texto){
   conferir(await resultado()==="acerto", "a ordem certa conta como acerto");
 
   await abrir("Colocar em ordem",2);
-  var n=await pg.locator(".banca .peca").count();
-  for(var j=0;j<n;j++) await pg.locator(".banca .peca").last().click();
+  /* monta de propósito na ordem errada: a certa com os dois primeiros trocados.
+     (Clicar sempre na última peça poderia dar a ordem certa por acaso.) */
+  var ordemCerta=await pg.evaluate(function(){ return window.__q().certo; });
+  var errado=ordemCerta.slice();
+  errado[0]=ordemCerta[1]; errado[1]=ordemCerta[0];
+  for(var j=0;j<errado.length;j++)
+    await pg.locator(".banca .peca",{hasText:new RegExp("^"+errado[j]+"$")}).first().click();
   await pg.locator(".acoes-q .btn").click();
   await pg.waitForTimeout(200);
+  conferir(await resultado()==="erro", "a ordem errada conta como erro");
   conferir(await pg.locator(".tira.gabarito").count()>0, "mostra a ordem certa quando erra");
 
   console.log("\nFormato: ligar os pares");
@@ -220,6 +226,97 @@ function conferir(condicao,texto){
   await pg.waitForTimeout(300);
   conferir(await pg.locator("#relatorio img, #sync-txt img, .relato img").count()===0,
            "nome digitado com HTML aparece como texto, não vira marcação");
+
+  /* ---------- layout: nada sobreposto, nada vazando para fora ---------- */
+  console.log("\nLayout no celular");
+  await pg.goto(base);
+  await pg.waitForTimeout(300);
+  await pg.click(".perfil:not(.novo)");
+  await pg.waitForTimeout(300);
+
+  async function vazaNaHorizontal(){
+    return pg.evaluate(function(){
+      return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
+    });
+  }
+  for(var larg of [320,360,400]){
+    await pg.setViewportSize({width:larg,height:800});
+    await pg.waitForTimeout(200);
+    conferir(!(await vazaNaHorizontal()), "a tela da criança cabe em "+larg+"px sem rolar para o lado");
+  }
+  await pg.setViewportSize({width:390,height:900});
+
+  /* o selo de revisão não pode cobrir o "Começar" do cartão */
+  await pg.evaluate(function(){
+    /* força uma revisão pendente para o selo aparecer */
+    var d=JSON.parse(localStorage.getItem("missoes.dados.v2"));
+    d.perfis[0].revisao={"Soma":{caixa:1,prox:Date.now()-86400000}};
+    localStorage.setItem("missoes.dados.v2",JSON.stringify(d));
+  });
+  await pg.goto(base);
+  await pg.waitForTimeout(300);
+  await pg.click(".perfil:not(.novo)");
+  await pg.waitForTimeout(400);
+  var selo=pg.locator(".mcard .rev").first();
+  conferir(await selo.count()>0, "o cartão da matéria mostra quantas revisões estão esperando");
+  if(await selo.count()){
+    var cx=await selo.boundingBox();
+    var go=await pg.locator(".mcard.m-mat .go").boundingBox();
+    var colide = cx && go && !(cx.x+cx.width<=go.x || go.x+go.width<=cx.x || cx.y+cx.height<=go.y || go.y+go.height<=cx.y);
+    conferir(!colide, "o selo de revisão não fica por cima do 'Começar'");
+  }
+
+  /* nas telas de resposta também não pode vazar */
+  var formatos=[["Soma",3,"digitar"],["Montar a frase",3,"montar a frase"],["Ligar os pares",3,"ligar os pares"],["Atenção",3,"contar muitas figuras"]];
+  for(var fi=0; fi<formatos.length; fi++){
+    await pg.evaluate(function(a){ window.__teste(a[0],a[1]); },[formatos[fi][0],formatos[fi][1]]);
+    await pg.waitForTimeout(250);
+    conferir(!(await vazaNaHorizontal()), "a tela de "+formatos[fi][2]+" cabe na largura do celular");
+  }
+
+  /* ---------- funciona sem internet? ---------- */
+  console.log("\nSem internet");
+  var ctx=await navegador.newContext({viewport:{width:390,height:844}});
+  var off=await ctx.newPage();
+  var errosOff=[];
+  off.on("pageerror",function(e){ errosOff.push(e.message); });
+  await off.goto("http://127.0.0.1:"+PORTA+"/index.html");
+  await off.waitForTimeout(500);
+  await off.fill("#cr-nome","Bia");
+  await off.click("#cr-salvar");
+  await off.waitForTimeout(300);
+
+  /* espera o service worker guardar tudo */
+  var sw=await off.evaluate(function(){
+    return navigator.serviceWorker.ready.then(function(r){ return !!r.active; });
+  });
+  conferir(sw, "o service worker ficou ativo");
+  await off.waitForTimeout(1500);
+  var guardados=await off.evaluate(function(){
+    return caches.keys().then(function(n){
+      return caches.open(n[0]).then(function(c){ return c.keys(); });
+    }).then(function(ks){ return ks.map(function(k){ return new URL(k.url).pathname; }); });
+  });
+  ["/index.html","/estilo.css","/js/app.js","/js/questoes.js","/js/som.js"].forEach(function(a){
+    conferir(guardados.indexOf(a)>=0, "guardou "+a+" para usar offline");
+  });
+
+  await ctx.setOffline(true);
+  var abriu=true;
+  try{ await off.goto("http://127.0.0.1:"+PORTA+"/index.html"); }catch(e){ abriu=false; }
+  await off.waitForTimeout(600);
+  conferir(abriu, "o app abre com a internet desligada");
+  conferir(await off.locator(".perfil:not(.novo)").count()>0, "a criança cadastrada continua lá offline");
+  if(await off.locator(".perfil:not(.novo)").count()){
+    await off.click(".perfil:not(.novo)");
+    await off.waitForTimeout(300);
+    await off.click(".mcard.m-mat");
+    await off.waitForTimeout(400);
+    conferir(await off.locator(".qcard .qtxt").count()>0, "dá para jogar uma missão inteira offline");
+  }
+  conferir(errosOff.length===0, "nenhum erro de JavaScript com a internet desligada");
+  if(errosOff.length) errosOff.forEach(function(e){ console.log("      "+e); });
+  await ctx.close();
 
   /* ---------- fim ---------- */
   conferir(errosJS.length===0, "nenhum erro de JavaScript em todo o percurso");

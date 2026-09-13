@@ -10,15 +10,67 @@
   "background_color": "#EEF3F8",
   "theme_color": "#2559C9",
   "lang": "pt-BR",
-  "categories": ["education", "kids"],
+  "categories": [
+    "education",
+    "kids"
+  ],
   "prefer_related_applications": false,
   "shortcuts": [
-    { "name": "Ler e escrever", "url": "./index.html" },
-    { "name": "Área dos adultos", "url": "./index.html" }
+    {
+      "name": "Ler e escrever",
+      "url": "./index.html"
+    },
+    {
+      "name": "Área dos adultos",
+      "url": "./index.html"
+    }
   ],
   "icons": [
-    { "src": "icones/icone-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icones/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icones/icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icones/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icones/icone-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "capturas/1-tela-da-crianca.png",
+      "sizes": "800x1720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "A tela inicial da criança, com a meta do dia e as missões"
+    },
+    {
+      "src": "capturas/2-montar-a-palavra.png",
+      "sizes": "800x1720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Montando uma palavra com as sílabas"
+    },
+    {
+      "src": "capturas/3-digitar-a-conta.png",
+      "sizes": "800x1720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Digitando o resultado de uma conta"
+    },
+    {
+      "src": "capturas/5-painel-largo.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "O painel de acompanhamento dos adultos"
+    }
   ]
 }

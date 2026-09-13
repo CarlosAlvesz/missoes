@@ -1110,6 +1110,10 @@ function pintarConteudo(){
   }else{
     var g=el("div","reforcar");
     var alvo = abaAtual==="todos" ? null : acharPerfil(abaAtual);
+    /* sem nada fraco, o que aparece são os pontos fortes — e isso precisa
+       estar escrito, senão parece que 100% de acerto é problema */
+    if(!fracos.length && fortes.length)
+      host.appendChild(el("div","vazio","Nada abaixo de 75%: não há o que reforçar agora. O nível das questões já sobe sozinho conforme ele acerta. Onde ele está mais firme:"));
     (fracos.length?fracos:fortes).forEach(function(x){
       var d=el("div","rf"+(x.pc>=75?" bom":""));
       d.appendChild(el("b",null,x.nome));
@@ -1119,7 +1123,7 @@ function pintarConteudo(){
       d.appendChild(s);
       /* fecha o ciclo: saber o que está travando só ajuda se der para treinar aquilo */
       if(alvo && Q.porTag[x.nome]){
-        var b=el("button","chip mini treinar","Treinar isso ▸"); b.type="button";
+        var b=el("button","chip mini treinar",fracos.length?"Treinar isso ▸":"Treinar mesmo assim ▸"); b.type="button";
         b.title="Abrir uma missão só de "+x.nome+" para "+alvo.nome;
         b.addEventListener("click",function(){ abrirTreino(x.nome,alvo.id); });
         d.appendChild(b);
@@ -1129,7 +1133,6 @@ function pintarConteudo(){
     host.appendChild(g);
     if(!alvo && (fracos.length||fortes.length))
       host.appendChild(el("div","vazio","Escolha uma criança nas abas acima para poder treinar uma habilidade direto daqui."));
-    if(!fracos.length) host.insertBefore(el("div","vazio","Nada abaixo de 75%. Está indo bem — o nível das questões já sobe sozinho conforme ele acerta."),g);
   }
 
   /* como trabalha */

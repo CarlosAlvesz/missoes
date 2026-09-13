@@ -11,6 +11,14 @@ Funciona no computador e no celular, instala como aplicativo e roda offline. Nã
 não tem compra, não manda dado nenhum para lugar nenhum — a não ser que você ligue a sincronização
 no seu próprio banco.
 
+| A tela da criança | Montar a palavra | Digitar a conta |
+|---|---|---|
+| ![](capturas/1-tela-da-crianca.png) | ![](capturas/2-montar-a-palavra.png) | ![](capturas/3-digitar-a-conta.png) |
+
+O acompanhamento dos adultos:
+
+![](capturas/4-painel-dos-adultos.png)
+
 ---
 
 ## 1. Publicar no GitHub Pages
@@ -227,6 +235,7 @@ js/som.js                  sons do jogo, gerados pelo navegador
 js/sync.js                 sincronização entre aparelhos
 testes/testar.js           confere o banco de questões inteiro
 testes/interface.js        joga o app num navegador de verdade
+capturas/                  imagens usadas aqui e na tela de instalação
 icones/                    ícones do app
 fontes/                    fonte escolar Andika (SIL Open Font License)
 ```
