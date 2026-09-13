@@ -199,6 +199,7 @@ button{font-family:inherit}
 .btn:focus-visible{outline:4px solid var(--acc);outline-offset:3px}
 .btn.sec{background:var(--surface);color:var(--ink);border:2px solid var(--line-strong);box-shadow:none}
 .btn.wide{width:100%;margin-top:auto}
+.btn:disabled{opacity:.4;cursor:default;filter:none;box-shadow:none}
 
 /* ---------- fim ---------- */
 .fim{background:var(--surface);border:2px solid var(--line);border-radius:22px;padding:28px 22px;text-align:center;box-shadow:var(--sombra)}
@@ -352,4 +353,108 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 @media (prefers-reduced-motion: reduce){
   .confete{display:none}
   *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+
+/* =========================================================
+   Formatos de resposta além da múltipla escolha
+   ========================================================= */
+
+/* ---------- digitar a resposta ---------- */
+.visor{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  min-height:72px;margin:18px 0 14px;padding:8px 16px;
+  border:3px dashed var(--line-strong);border-radius:16px;background:var(--surface-2);
+  font-family:var(--num);font-size:2.4rem;font-weight:700;font-variant-numeric:tabular-nums;
+  transition:border-color .2s ease,background .2s ease;
+}
+.visor.vazio::after{content:"?";color:var(--ink-faint);opacity:.55}
+.visor .v{color:var(--ink);letter-spacing:.06em}
+.visor.certa{border-style:solid;border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--surface))}
+.visor.certa .v{color:var(--ok)}
+.visor.errada{border-style:solid;border-color:var(--quase)}
+.visor.errada .v{color:var(--quase);text-decoration:line-through;opacity:.7}
+.visor .gabarito{color:var(--ok)}
+.visor .gabarito::before{content:"→ ";color:var(--ink-faint);text-decoration:none}
+
+.teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:320px;margin:0 auto}
+.tecla{
+  font:inherit;font-family:var(--num);font-size:1.55rem;font-weight:700;cursor:pointer;
+  min-height:62px;border-radius:14px;border:2px solid var(--line-strong);
+  background:var(--surface);color:var(--ink);box-shadow:var(--sombra);
+  transition:transform .08s ease,background .12s ease;
+}
+.tecla:hover{background:var(--surface-2)}
+.tecla:active{transform:scale(.95)}
+.tecla:focus-visible{outline:4px solid var(--acc);outline-offset:2px}
+.tecla.apaga{font-size:1.3rem;color:var(--ink-soft)}
+.tecla.ok{background:var(--acc);color:#fff;border-color:var(--acc)}
+.tecla.ok:hover{filter:brightness(1.08);background:var(--acc)}
+.tecla:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
+
+/* ---------- colocar na ordem ---------- */
+.tira{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;
+  min-height:70px;margin:16px 0 14px;padding:10px 12px;
+  border:3px dashed var(--line-strong);border-radius:16px;background:var(--surface-2);
+}
+.tira.cola{gap:0}
+.tira.certa{border-style:solid;border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface))}
+.tira.errada{border-style:solid;border-color:var(--quase)}
+.tira.errada .peca.posta{color:var(--quase);border-color:var(--quase);opacity:.85}
+.tira.gabarito{border-style:solid;border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface));min-height:0;margin-top:0}
+.tira .placeholder{color:var(--ink-faint);font-size:.92rem;font-weight:600}
+
+.banca{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:16px}
+.peca{
+  font:inherit;font-family:var(--escolar);font-size:1.35rem;font-weight:700;cursor:pointer;
+  padding:12px 16px;min-height:54px;border-radius:13px;
+  border:2px solid var(--line-strong);background:var(--surface);color:var(--ink);
+  box-shadow:var(--sombra);transition:transform .08s ease;
+}
+#kid.bastao .peca{text-transform:uppercase}
+.peca:hover{border-color:var(--acc)}
+.peca:active{transform:scale(.95)}
+.peca:focus-visible{outline:4px solid var(--acc);outline-offset:2px}
+.peca.posta{border-color:var(--acc);color:var(--acc);box-shadow:none}
+.tira.cola .peca.posta{border-radius:0;border-left-width:1px;border-right-width:1px}
+.tira.cola .peca.posta:first-child{border-radius:13px 0 0 13px;border-left-width:2px}
+.tira.cola .peca.posta:last-child{border-radius:0 13px 13px 0;border-right-width:2px}
+.tira .peca.posta:disabled,.banca .peca:disabled{opacity:.5;cursor:default}
+.tira.gabarito .peca.posta{opacity:1;color:var(--ok);border-color:var(--ok)}
+.acoes-q{margin-top:4px}
+
+/* ---------- ligar os pares ---------- */
+.ligar{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:16px 0 6px}
+.ligar .lado{display:flex;flex-direction:column;gap:9px}
+.liga{
+  font:inherit;font-size:1.1rem;font-weight:700;cursor:pointer;
+  min-height:58px;padding:10px 12px;border-radius:13px;
+  border:2px solid var(--line-strong);background:var(--surface);color:var(--ink);
+  box-shadow:var(--sombra);transition:transform .08s ease,border-color .12s ease;
+}
+.liga.kt{font-family:var(--escolar)}
+#kid.bastao .liga.kt{text-transform:uppercase}
+.liga.emoji{font-size:2rem;line-height:1}
+.liga:hover{border-color:var(--acc)}
+.liga:active{transform:scale(.96)}
+.liga:focus-visible{outline:4px solid var(--acc);outline-offset:2px}
+.liga.sel{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--surface));transform:scale(1.03)}
+.liga.ligado{border-color:var(--ok);color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface));opacity:.75;box-shadow:none}
+.liga.errou{border-color:var(--quase);animation:treme .4s ease}
+@keyframes treme{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)} 40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
+}
+
+@supports not (color:color-mix(in srgb,red,blue)){
+  .visor.certa,.tira.certa,.tira.gabarito,.liga.ligado{background:var(--surface)}
+  .liga.sel{background:var(--surface-2)}
+}
+
+@media (max-width:400px){
+  .liga{font-size:1rem;min-height:52px}
+  .liga.emoji{font-size:1.7rem}
+  .peca{font-size:1.2rem;padding:10px 13px}
+  .tecla{min-height:56px;font-size:1.4rem}
 }

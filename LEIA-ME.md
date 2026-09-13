@@ -3,7 +3,7 @@
 App para crianças de 6 a 8 anos praticarem leitura, matemática, raciocínio, inglês e ciências.
 A criança faz as atividades sozinha; o adulto avalia no fim e acompanha o desempenho num painel.
 
-São 64 habilidades, cada uma em 3 níveis que se ajustam sozinhos ao ritmo da criança, com revisão
+São 70 habilidades, cada uma em 3 níveis que se ajustam sozinhos ao ritmo da criança, com revisão
 espaçada do que ela errou e explicação em toda resposta errada.
 
 Funciona no computador e no celular, instala como aplicativo e roda offline. Não tem anúncio,
@@ -126,7 +126,7 @@ As avaliações registram quem avaliou.
 
 **Dificuldade que se ajusta sozinha**
 
-Cada uma das 64 habilidades — sílaba inicial, subtração, memória, cores em inglês, espaço, Brasil
+Cada uma das 70 habilidades — sílaba inicial, subtração, memória, cores em inglês, espaço, Brasil
 e assim por diante — tem três níveis. Acima de 85% de acerto nas últimas tentativas o nível sobe;
 abaixo de 50% ele desce. Isso acontece por habilidade, não por matéria: dá para estar no nível 3 de
 soma e no 1 de subtração.
@@ -140,6 +140,20 @@ próxima missão daquela matéria, marcada com 🔁. A cada acerto o intervalo a
 
 Cada missão traz no máximo 3 perguntas de revisão, para não virar só correção de erro. A tela inicial
 mostra quantas coisas estão na fila, e o painel dos adultos também.
+
+**Quatro jeitos de responder, não só múltipla escolha**
+
+Com 3 alternativas a criança acerta 1 em 3 chutando, sem ler. Por isso o app tem outros formatos:
+
+| Formato | Onde aparece |
+|---|---|
+| **Escolher** entre alternativas | a maioria das habilidades |
+| **Digitar** a resposta num tecladinho | Soma, Subtração, Tabuada e Quanto falta, no nível 3 |
+| **Montar** tocando nas peças em ordem | Montar a palavra, Montar a frase, Colocar em ordem |
+| **Ligar** os pares | Ligar os pares, Ligar em inglês, Ligar as contas |
+
+Repare no pulo: no nível 3 de Soma ela não escolhe mais entre três números, ela **calcula e digita**.
+É outra tarefa mental — e é exatamente a diferença entre reconhecer e saber.
 
 **Explicação quando erra**
 
@@ -203,6 +217,7 @@ js/app.js                  telas, perfis, níveis, revisão, recompensas, painel
 js/som.js                  sons do jogo, gerados pelo navegador
 js/sync.js                 sincronização entre aparelhos
 testes/testar.js           confere o banco de questões inteiro
+testes/interface.js        joga o app num navegador de verdade
 icones/                    ícones do app
 fontes/                    fonte escolar Andika (SIL Open Font License)
 ```
@@ -212,7 +227,7 @@ Sem sincronização, tudo fica no navegador do aparelho. Em Adultos → Ajustes 
 
 ## 7. Mexer no banco de questões sem quebrar nada
 
-O arquivo `js/questoes.js` tem 64 habilidades. Cada uma é uma função que recebe o nível (1, 2 ou 3)
+O arquivo `js/questoes.js` tem 70 habilidades. Cada uma é uma função que recebe o nível (1, 2 ou 3)
 e devolve uma questão. Depois de mexer nele, rode:
 
 ```bash
@@ -220,8 +235,21 @@ node testes/testar.js
 ```
 
 O teste sorteia 2.000 questões de cada habilidade em cada nível e confere que todas têm enunciado,
-exatamente uma resposta certa, nenhuma alternativa repetida ou vazia, explicação de erro, e variedade
-suficiente para a criança não decorar. Ele roda sozinho a cada `push` pelo GitHub Actions.
+resposta possível no formato certo, nenhuma alternativa repetida ou vazia, explicação de erro, e
+variedade suficiente para a criança não decorar.
+
+Existe um segundo teste, que abre o app num navegador de verdade e **joga**: digita no tecladinho,
+monta palavras, liga pares, faz uma missão inteira e entra na área dos adultos. São 32 verificações.
+
+```bash
+npm install --no-save playwright
+npx playwright install chromium
+node testes/interface.js
+```
+
+Os dois rodam sozinhos a cada `push`, pelo GitHub Actions. Se algo quebrar, aparece um ✗ vermelho
+no GitHub antes de chegar na criança. **Você não precisa rodar nada disso à mão** — é a rede de
+proteção para quando alguém (você, eu, ou outra pessoa) mexer no código.
 
 > Se acrescentar uma habilidade nova, o `tag` dela precisa ser único — é a chave do histórico de
 > nível de cada criança. O teste reclama se houver repetição.

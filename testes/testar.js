@@ -51,19 +51,46 @@ Q.tipos.forEach(function(t){
 
       if(!q){ falha(onde+": não devolveu questão"); return; }
       if(!q.txt){ falha(onde+": questão sem enunciado"); return; }
-      if(!Array.isArray(q.ops)){ falha(onde+": questão sem lista de respostas"); return; }
-      if(q.ops.length<2){ falha(onde+": só "+q.ops.length+" resposta(s) — "+q.txt); return; }
+      if(!Q.jogavel(q)){ falha(onde+": o app não consegue desenhar esta questão — "+JSON.stringify(q).slice(0,200)); return; }
 
-      var certas=q.ops.filter(function(o){return o.ok;}).length;
-      if(certas!==1){ falha(onde+": "+certas+" respostas certas — "+q.txt+" "+JSON.stringify(q.ops.map(function(o){return o.t;}))); return; }
+      var chave;
+      if(q.formato==="digitar"){
+        /* a resposta tem de ser um número inteiro que caiba no tecladinho */
+        if(!/^[0-9]{1,4}$/.test(q.resposta)) falha(onde+": resposta impossível de digitar — "+q.resposta);
+        if(!q.conta && !q.fig) falha(onde+": questão de digitar sem conta nem figura — "+q.txt);
+        chave="d|"+q.txt+"|"+(q.conta||"")+"|"+q.resposta;
 
-      var txts=q.ops.map(function(o){return String(o.t);});
-      txts.forEach(function(x){
-        if(!x || x==="undefined" || x==="NaN" || x==="null")
-          falha(onde+": resposta vazia ou inválida — "+JSON.stringify(txts));
-      });
-      if(new Set(txts).size!==txts.length)
-        falha(onde+": respostas repetidas — "+q.txt+" "+JSON.stringify(txts));
+      }else if(q.formato==="ordenar"){
+        if(q.pecas.length<2||q.pecas.length>8) falha(onde+": "+q.pecas.length+" peças para ordenar — fora do que cabe na tela");
+        /* as peças embaralhadas têm de ser exatamente as mesmas da resposta */
+        var a1=q.pecas.slice().sort().join("\u0001"), a2=q.certo.slice().sort().join("\u0001");
+        if(a1!==a2) falha(onde+": as peças não batem com a resposta — "+JSON.stringify(q.pecas)+" vs "+JSON.stringify(q.certo));
+        q.certo.forEach(function(x){ if(!x||!String(x).trim()) falha(onde+": peça vazia em "+JSON.stringify(q.certo)); });
+        if(q.certo.length>1 && q.pecas.join("\u0001")===q.certo.join("\u0001") && new Set(q.certo).size>1)
+          falha(onde+": as peças vieram já na ordem certa");
+        chave="o|"+q.txt+"|"+q.certo.join(",");
+
+      }else if(q.formato==="ligar"){
+        if(q.pares.length<2||q.pares.length>5) falha(onde+": "+q.pares.length+" pares — fora do que cabe na tela");
+        var esq=q.pares.map(function(x){return String(x[0]);});
+        var dir=q.pares.map(function(x){return String(x[1]);});
+        /* se um lado repetir, existe mais de uma ligação certa e o jogo trava */
+        if(new Set(esq).size!==esq.length) falha(onde+": lado esquerdo repetido — "+JSON.stringify(esq));
+        if(new Set(dir).size!==dir.length) falha(onde+": lado direito repetido — "+JSON.stringify(dir));
+        chave="l|"+q.txt+"|"+q.pares.map(function(x){return x.join(">");}).sort().join(",");
+
+      }else{
+        var certas=q.ops.filter(function(o){return o.ok;}).length;
+        if(certas!==1){ falha(onde+": "+certas+" respostas certas — "+q.txt+" "+JSON.stringify(q.ops.map(function(o){return o.t;}))); return; }
+        var txts=q.ops.map(function(o){return String(o.t);});
+        txts.forEach(function(x){
+          if(!x || x==="undefined" || x==="NaN" || x==="null")
+            falha(onde+": resposta vazia ou inválida — "+JSON.stringify(txts));
+        });
+        if(new Set(txts).size!==txts.length)
+          falha(onde+": respostas repetidas — "+q.txt+" "+JSON.stringify(txts));
+        chave=(q.txt||"")+"|"+(q.fig||"")+"|"+(q.conta||"")+"|"+(q.frase||"")+"|"+txts.filter(function(_,k){return q.ops[k].ok;});
+      }
 
       [q.txt,q.fala,q.porque,q.conta,q.frase].forEach(function(campo){
         if(campo && /undefined|NaN|\[object/.test(campo))
@@ -72,7 +99,7 @@ Q.tipos.forEach(function(t){
       if(q.preview && (!q.preview.fig || !(q.preview.seg>0)))
         falha(onde+": tela de memorização mal formada");
 
-      distintas[(q.txt||"")+"|"+(q.fig||"")+"|"+(q.conta||"")+"|"+(q.frase||"")+"|"+txts.filter(function(_,k){return q.ops[k].ok;})]=1;
+      distintas[chave]=1;
       n++;
     }
     var v=Object.keys(distintas).length;
@@ -110,7 +137,16 @@ if(Q.gerar("habilidade que não existe",1)!==null) falha("gerar() deveria devolv
 
 /* ---------- resultado ---------- */
 var total=Q.tipos.length;
+var porFormato={};
+Q.tipos.forEach(function(t){
+  [1,2,3].forEach(function(nv){
+    var q; try{ q=t.fn(nv); }catch(e){ return; }
+    var f=(q&&q.formato)||"escolha";
+    porFormato[f]=(porFormato[f]||0)+1;
+  });
+});
 console.log("Habilidades testadas: "+total+"  ("+SORTEIOS+" sorteios em cada nível)");
+console.log("Formatos de resposta: "+Object.keys(porFormato).map(function(f){return f+" ("+porFormato[f]+" habilidade-níveis)";}).join(", "));
 Q.ordem.forEach(function(a){
   if(a==="voz") return;
   console.log("  "+Q.areas[a].nome+": "+Q.tiposDaArea(a).length+" habilidades");

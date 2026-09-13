@@ -7,11 +7,25 @@ on:
 
 jobs:
   banco-de-questoes:
+    name: Banco de questões
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Conferir o banco de questões
-        run: node testes/testar.js
+      - run: node testes/testar.js
+
+  interface:
+    name: Interface num navegador de verdade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Instalar o navegador de teste
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - run: node testes/interface.js

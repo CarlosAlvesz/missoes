@@ -172,7 +172,13 @@ function revisoesVencidas(p,area){
 function totalRevisoes(p){ return revisoesVencidas(p,null).length; }
 
 /* ---------- memória de perguntas recentes (para não repetir) ---------- */
-function assinatura(q){ return (q.tag||"")+"|"+(q.txt||"")+"|"+(q.fig||"")+"|"+(q.conta||"")+"|"+(q.frase||""); }
+function assinatura(q){
+  var extra = q.formato==="digitar" ? q.resposta
+            : q.formato==="ordenar" ? (q.certo||[]).join(",")
+            : q.formato==="ligar"   ? (q.pares||[]).map(function(x){return x.join(">");}).sort().join(",")
+            : "";
+  return (q.tag||"")+"|"+(q.txt||"")+"|"+(q.fig||"")+"|"+(q.conta||"")+"|"+(q.frase||"")+"|"+extra;
+}
 function recentesDe(p){ if(!Array.isArray(p.recentes)) p.recentes=[]; return p.recentes; }
 function lembrar(p,qs){
   var r=recentesDe(p);
@@ -513,6 +519,7 @@ function montarMissao(area,perfil){
 }
 
 function abrirMissao(area){
+  pararAvanco(); pararContagem();
   var qs=montarMissao(area,atualPerfil);
   if(!qs.length){ pintarHome(); mostrar("tela-home"); return; }
   atual={area:area,tipo:"quiz",qs:qs,i:0,acertos:0,tags:{},inicio:Date.now()};
@@ -538,7 +545,17 @@ function pintarQuestao(){
   var q=atual.qs[atual.i], card=$("qcard");
   card.innerHTML="";
   if(q.preview && !q.previewFeito) return pintarPreview(q,card);
+  cabecalho(q,card);
+  switch(q.formato){
+    case "digitar": return pintarDigitar(q,card);
+    case "ordenar": return pintarOrdenar(q,card);
+    case "ligar":   return pintarLigar(q,card);
+    default:        return pintarEscolha(q,card);
+  }
+}
 
+/* parte de cima do cartão, igual em todos os formatos */
+function cabecalho(q,card){
   var tag=el("div","qtag");
   tag.appendChild(el("span",null,q.tag));
   if(q.revisao) tag.appendChild(el("em","rev","🔁 revisão"));
@@ -556,17 +573,220 @@ function pintarQuestao(){
   if(q.conta) card.appendChild(el("div","contas",q.conta));
   if(q.svg){ var sv=el("div","figura"); sv.innerHTML=q.svg; card.appendChild(sv); }
   if(q.fig) card.appendChild(el("div","figura"+(q.figGrande?" grande":""),q.fig));
+}
 
+/* ---------- formato 1: escolher entre alternativas ---------- */
+function pintarEscolha(q,card){
   var ops=el("div","ops col"+(q.cols||3)+(q.emoji?" emo":""));
   q.ops.forEach(function(o){
     var b=el("button","op"+(q.emoji?" emoji":""),o.t);
     b.type="button";
     if(!q.emoji) b.classList.add("kt");
     if(q.opsLang==="en") b.lang="en";
-    b.addEventListener("click",function(){ responder(q,o,b,ops,card); });
+    b.addEventListener("click",function(){
+      Array.prototype.forEach.call(ops.children,function(c,idx){
+        c.disabled=true;
+        if(q.ops[idx].ok) c.classList.add("certa");
+        else if(c===b) c.classList.add("errada");
+        else c.classList.add("apagada");
+      });
+      concluir(q,!!o.ok,card);
+    });
     ops.appendChild(b);
   });
   card.appendChild(ops);
+}
+
+/* ---------- formato 2: digitar a resposta ---------- */
+function pintarDigitar(q,card){
+  var max=q.resposta.length+1, digitado="", respondido=false;
+  var visor=el("div","visor");
+  var valor=el("span","v","");
+  visor.appendChild(valor);
+  visor.setAttribute("aria-live","polite");
+  card.appendChild(visor);
+
+  var teclado=el("div","teclado");
+  function atualizar(){
+    if(respondido) return;   /* depois de conferir, o teclado fica travado */
+    valor.textContent=digitado;
+    visor.classList.toggle("vazio",!digitado);
+    ok.disabled=!digitado;
+  }
+  function tecla(rot,acao,cls){
+    var b=el("button","tecla"+(cls?" "+cls:""),rot); b.type="button";
+    b.addEventListener("click",function(){ if(somLigado()) SOM.toque(); acao(); atualizar(); });
+    teclado.appendChild(b);
+    return b;
+  }
+  ["1","2","3","4","5","6","7","8","9"].forEach(function(n){
+    tecla(n,function(){ if(digitado.length<max) digitado+=n; });
+  });
+  tecla("←",function(){ digitado=digitado.slice(0,-1); },"apaga");
+  tecla("0",function(){ if(digitado.length<max) digitado+="0"; });
+  var ok=tecla("✓",function(){
+    if(!digitado||respondido) return;
+    respondido=true;
+    Array.prototype.forEach.call(teclado.children,function(c){ c.disabled=true; });
+    var certo = digitado===q.resposta;
+    visor.classList.add(certo?"certa":"errada");
+    if(!certo) visor.appendChild(el("span","gabarito",q.resposta));
+    concluir(q,certo,card);
+  },"ok");
+  card.appendChild(teclado);
+  atualizar();
+}
+
+/* ---------- formato 3: colocar na ordem certa ---------- */
+function pintarOrdenar(q,card){
+  var montado=[];
+  var tira=el("div","tira"+(q.cola?" cola":""));
+  tira.setAttribute("aria-live","polite");
+  var banca=el("div","banca");
+  var acao=el("div","acoes-q");
+  var conferir=el("button","btn wide","Conferir"); conferir.type="button";
+  acao.appendChild(conferir);
+
+  function desenhar(){
+    tira.innerHTML=""; banca.innerHTML="";
+    if(!montado.length) tira.appendChild(el("span","placeholder","toque nas peças abaixo"));
+    montado.forEach(function(idx,pos){
+      var b=el("button","peca posta kt",q.pecas[idx]); b.type="button";
+      b.setAttribute("aria-label","Tirar "+q.pecas[idx]);
+      b.addEventListener("click",function(){
+        if(somLigado()) SOM.toque();
+        montado.splice(pos,1); desenhar();
+      });
+      tira.appendChild(b);
+    });
+    q.pecas.forEach(function(txt,idx){
+      if(montado.indexOf(idx)>=0) return;
+      var b=el("button","peca kt",txt); b.type="button";
+      b.addEventListener("click",function(){
+        if(somLigado()) SOM.toque();
+        montado.push(idx); desenhar();
+      });
+      banca.appendChild(b);
+    });
+    conferir.disabled = montado.length!==q.pecas.length;
+  }
+
+  conferir.addEventListener("click",function(){
+    var resposta=montado.map(function(i){ return q.pecas[i]; });
+    var certo = resposta.join("\u0001")===q.certo.join("\u0001");
+    Array.prototype.forEach.call(tira.children,function(c){ c.disabled=true; });
+    Array.prototype.forEach.call(banca.children,function(c){ c.disabled=true; });
+    conferir.disabled=true;
+    tira.classList.add(certo?"certa":"errada");
+    if(!certo){
+      var g=el("div","tira gabarito"+(q.cola?" cola":""));
+      q.certo.forEach(function(t){ g.appendChild(el("span","peca posta kt",t)); });
+      card.insertBefore(g,acao);
+    }
+    concluir(q,certo,card);
+  });
+
+  card.appendChild(tira);
+  card.appendChild(banca);
+  card.appendChild(acao);
+  desenhar();
+}
+
+/* ---------- formato 4: ligar os pares ---------- */
+function pintarLigar(q,card){
+  var esq=shuffle(q.pares.map(function(x,i){ return {i:i,t:String(x[0])}; }));
+  var dir=shuffle(q.pares.map(function(x,i){ return {i:i,t:String(x[1])}; }));
+  var sel=null, feitos=0, erros=0;
+  var grade=el("div","ligar");
+  var colE=el("div","lado"), colD=el("div","lado");
+  var botoesE={}, botoesD={};
+
+  function criar(item,lado,emoji){
+    var b=el("button","liga"+(emoji?" emoji":" kt"),item.t); b.type="button";
+    b.addEventListener("click",function(){ tocar(item,lado,b); });
+    (lado==="e"?botoesE:botoesD)[item.i]=b;
+    (lado==="e"?colE:colD).appendChild(b);
+  }
+  function tocar(item,lado,b){
+    if(b.disabled) return;
+    if(somLigado()) SOM.toque();
+    if(!sel || sel.lado===lado){
+      /* trocou de ideia dentro do mesmo lado */
+      if(sel) (sel.lado==="e"?botoesE:botoesD)[sel.item.i].classList.remove("sel");
+      sel={item:item,lado:lado,btn:b};
+      b.classList.add("sel");
+      return;
+    }
+    var a=sel; sel=null;
+    a.btn.classList.remove("sel");
+    if(a.item.i===item.i){
+      a.btn.classList.add("ligado"); b.classList.add("ligado");
+      a.btn.disabled=true; b.disabled=true;
+      feitos++;
+      if(somLigado()) SOM.acerto();
+      if(feitos===q.pares.length){
+        /* um engano de toque não estraga a questão; dois já mostram que não sabia */
+        concluir(q,erros<=1,card,{extra: erros?("Você ligou tudo, com "+erros+" tentativa"+(erros>1?"s":"")+" errada"+(erros>1?"s":"")+"."):null});
+      }
+    }else{
+      erros++;
+      if(somLigado()) SOM.erro();
+      a.btn.classList.add("errou"); b.classList.add("errou");
+      setTimeout(function(){ a.btn.classList.remove("errou"); b.classList.remove("errou"); },420);
+    }
+  }
+  esq.forEach(function(x){ criar(x,"e",q.emojiEsq); });
+  dir.forEach(function(x){ criar(x,"d",q.emojiDir); });
+  grade.appendChild(colE); grade.appendChild(colD);
+  card.appendChild(grade);
+}
+
+/* ---------- o que acontece depois de responder, em qualquer formato ---------- */
+var ELOGIOS=["Muito bem!","É isso aí!","Acertou!","Boa!","Mandou bem!","Perfeito!"];
+function concluir(q,certo,card,op){
+  op=op||{};
+  q.resultado=certo;
+  atual.tags[q.tag]=atual.tags[q.tag]||{c:0,e:0};
+  if(certo){ atual.acertos++; atual.tags[q.tag].c++; } else atual.tags[q.tag].e++;
+
+  /* alimenta a fila de revisão na hora */
+  if(atualPerfil){
+    if(certo){
+      anotarAcerto(atualPerfil,q.tag);
+      if(q.revisao) atualPerfil.revisoesFeitas=(atualPerfil.revisoesFeitas||0)+1;
+    }else anotarErro(atualPerfil,q.tag);
+  }
+
+  var ret=el("div","retorno "+(certo?"bom":"quase"));
+  ret.appendChild(el("span","kt", certo?pick(ELOGIOS):(op.extra||"Quase! Olha a resposta certa.")));
+  card.appendChild(ret);
+  pintarDots();
+
+  if(certo){
+    if(somLigado()) SOM.acerto();
+    falar(pick(["Muito bem","Isso","Boa"]));
+    pararAvanco();
+    timerAvanco=setTimeout(function(){ timerAvanco=null; avancar(); },1100);
+  }else{
+    if(somLigado()) SOM.erro();
+    /* errar sem entender não ensina nada: aqui aparece o porquê */
+    if(q.porque){
+      var pq=el("div","porque");
+      pq.appendChild(el("b",null,"Por quê: "));
+      pq.appendChild(el("span","kt",q.porque));
+      var sp2=el("button","speak mini","🔊"); sp2.type="button"; sp2.setAttribute("aria-label","Ouvir a explicação");
+      sp2.addEventListener("click",function(){ falar(q.porque); });
+      pq.appendChild(sp2);
+      /* a explicação vem antes do botão Continuar, senão a criança
+         clica em seguir sem chegar a ler o porquê */
+      card.insertBefore(pq,ret);
+      falar(q.porque);
+    }
+    var b=el("button","btn","Continuar"); b.type="button";
+    b.addEventListener("click",avancar);
+    ret.appendChild(b);
+    b.focus();
+  }
 }
 
 function pintarPreview(q,card){
@@ -598,66 +818,19 @@ function pintarPreview(q,card){
 var timerPreview=null;
 function pararContagem(){ if(timerPreview){ clearInterval(timerPreview); timerPreview=null; } }
 
-var ELOGIOS=["Muito bem!","É isso aí!","Acertou!","Boa!","Mandou bem!","Perfeito!"];
-
-function responder(q,o,btn,ops,card){
-  Array.prototype.forEach.call(ops.children,function(c){ c.disabled=true; });
-  var certo=!!o.ok;
-  q.resultado=certo;
-  atual.tags[q.tag]=atual.tags[q.tag]||{c:0,e:0};
-  if(certo){ atual.acertos++; atual.tags[q.tag].c++; } else atual.tags[q.tag].e++;
-
-  /* alimenta a fila de revisão na hora */
-  if(atualPerfil){
-    if(certo){
-      anotarAcerto(atualPerfil,q.tag);
-      if(q.revisao) atualPerfil.revisoesFeitas=(atualPerfil.revisoesFeitas||0)+1;
-    }else anotarErro(atualPerfil,q.tag);
-  }
-
-  Array.prototype.forEach.call(ops.children,function(c,idx){
-    if(q.ops[idx].ok) c.classList.add("certa");
-    else if(c===btn) c.classList.add("errada");
-    else c.classList.add("apagada");
-  });
-
-  var ret=el("div","retorno "+(certo?"bom":"quase"));
-  ret.appendChild(el("span","kt",certo?pick(ELOGIOS):"Quase! Olha a resposta certa."));
-  card.appendChild(ret);
-  pintarDots();
-
-  if(certo){
-    if(somLigado()) SOM.acerto();
-    falar(pick(["Muito bem","Isso","Boa"]));
-    setTimeout(avancar,1100);
-  }else{
-    if(somLigado()) SOM.erro();
-    /* errar sem entender não ensina nada: aqui aparece o porquê */
-    if(q.porque){
-      var pq=el("div","porque");
-      pq.appendChild(el("b",null,"Por quê: "));
-      pq.appendChild(el("span","kt",q.porque));
-      var sp2=el("button","speak mini","🔊"); sp2.type="button"; sp2.setAttribute("aria-label","Ouvir a explicação");
-      sp2.addEventListener("click",function(){ falar(q.porque); });
-      pq.appendChild(sp2);
-      /* a explicação vem antes do botão Continuar, senão a criança
-         clica em seguir sem chegar a ler o porquê */
-      card.insertBefore(pq,ret);
-      falar(q.porque);
-    }
-    var b=el("button","btn","Continuar"); b.type="button";
-    b.addEventListener("click",avancar);
-    ret.appendChild(b);
-    b.focus();
-  }
-}
+/* o antigo responder() virou pintarEscolha() + concluir(), compartilhados
+   por todos os formatos de resposta. */
+var timerAvanco=null;
+function pararAvanco(){ if(timerAvanco){ clearTimeout(timerAvanco); timerAvanco=null; } }
 function avancar(){
+  pararAvanco();
   atual.i++;
   if(atual.i>=atual.qs.length) terminar(); else pintarQuestao();
 }
 
 /* ---------- ler em voz alta ---------- */
 function abrirVoz(){
+  pararAvanco(); pararContagem();
   var feitas=sessoesDe(atualPerfil.id).filter(function(s){return s.tipo==="voz";}).length;
   var nv=nivelDe(atualPerfil,"Leitura em voz alta");
   var texto=Q.textoVoz(nv,feitas);
@@ -1225,7 +1398,7 @@ $("btn-som").addEventListener("click",function(){
   pintarBotaoSom();
   if(somLigado()) SOM.toque();
 });
-$("btn-trocar").addEventListener("click",function(){ calarVoz(); pararContagem(); atualPerfil=null; pintarPerfis(); mostrar("tela-perfis"); });
+$("btn-trocar").addEventListener("click",function(){ calarVoz(); pararContagem(); pararAvanco(); atualPerfil=null; pintarPerfis(); mostrar("tela-perfis"); });
 $("btn-pais").addEventListener("click",function(){
   if(!$("tela-pais").hidden){ dados.cfg.entrouPais=false; pintarPerfis(); mostrar("tela-perfis"); return; }
   $("pin-in").value=""; $("pin-aviso").textContent="";
@@ -1259,7 +1432,7 @@ $("pin-in").addEventListener("keydown",function(e){ if(e.key==="Enter") tentarPi
 $("pin-volta").addEventListener("click",function(){
   if(atualPerfil){ pintarHome(); mostrar("tela-home"); } else { pintarPerfis(); mostrar("tela-perfis"); }
 });
-$("sair").addEventListener("click",function(){ calarVoz(); pararContagem(); pintarHome(); mostrar("tela-home"); });
+$("sair").addEventListener("click",function(){ calarVoz(); pararContagem(); pararAvanco(); pintarHome(); mostrar("tela-home"); });
 $("f-voltar").addEventListener("click",function(){ pintarHome(); mostrar("tela-home"); });
 $("f-pai").addEventListener("click",function(){ abrirAval(atual.sessao); });
 $("aval-pular").addEventListener("click",function(){
@@ -1352,5 +1525,24 @@ mostrar("tela-perfis");
 if(!perfisAtivos().length){ editarCrianca(null); }
 
 window.addEventListener("online",function(){ agendarSync(); });
+
+/* Gancho para os testes automatizados de interface. Só existe quando a
+   página é aberta com ?teste=1 — no uso normal do app não é criado, então
+   não há como chamar sem querer. Serve para abrir uma habilidade e um nível
+   específicos, já que esperar a criança chegar no nível 3 levaria dezenas
+   de missões. */
+if(/(?:^|[?&])teste=1(?:&|$)/.test(location.search)){
+  window.__teste=function(tag,nivel){
+    pararAvanco(); pararContagem();
+    var q=Q.gerar(tag,nivel||1);
+    if(!q) throw new Error("habilidade desconhecida: "+tag);
+    atual={area:q.area,tipo:"quiz",qs:[q],i:0,acertos:0,tags:{},inicio:Date.now()};
+    $("tela-missao").style.setProperty("--acc","var(--"+q.area+")");
+    mostrar("tela-missao");
+    pintarQuestao();
+    return q;
+  };
+  window.__q=function(){ return atual && atual.qs[atual.i]; };
+}
 
 })();

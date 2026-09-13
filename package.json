@@ -5,6 +5,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "test": "node testes/testar.js"
+    "test": "node testes/testar.js",
+    "test:interface": "node testes/interface.js",
+    "test:tudo": "node testes/testar.js && node testes/interface.js"
   }
 }

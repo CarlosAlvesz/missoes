@@ -40,6 +40,46 @@ function caso(c){
     cols:c.cols||3, emoji:!!c.emoji
   };
 }
+/* ---------------------------------------------------------
+   Formatos de resposta além da múltipla escolha.
+   Com 3 alternativas a criança acerta 1 em 3 chutando; digitar
+   a conta, montar a palavra ou ligar os pares exige que ela
+   realmente saiba. Cada formato é desenhado pelo app.js.
+   --------------------------------------------------------- */
+
+/* digitar a resposta num tecladinho de números */
+function digitar(o){
+  return {formato:"digitar", txt:o.t, fala:o.fala||o.t, conta:o.conta,
+    fig:o.e, figGrande:!!o.e, resposta:String(o.r), porque:o.p};
+}
+
+/* tocar nos pedaços na ordem certa (sílabas de uma palavra, números, palavras de uma frase) */
+function ordenar(o){
+  var certo=o.certo.map(String), pecas=shuffle(certo), g=0;
+  /* embaralhar de verdade: se sair na ordem certa a questão não existe */
+  while(g++<40 && certo.length>1 && pecas.join("\u0001")===certo.join("\u0001")) pecas=shuffle(certo);
+  return {formato:"ordenar", txt:o.t, fala:o.fala||o.t, certo:certo, pecas:pecas,
+    fig:o.e, figGrande:!!o.e, porque:o.p, cola:o.cola!==false, dica:o.dica};
+}
+
+/* ligar cada figura da esquerda com o par dela na direita */
+function ligar(o){
+  return {formato:"ligar", txt:o.t, fala:o.fala||o.t, pares:o.pares,
+    porque:o.p, emojiEsq:!!o.emojiEsq, emojiDir:!!o.emojiDir};
+}
+
+/* escolhe n pares distintos dos dois lados */
+function paresDistintos(lista,n,esq,dir){
+  var vistosE={}, vistosD={}, out=[];
+  shuffle(lista).forEach(function(x){
+    if(out.length>=n) return;
+    var a=esq(x), b=dir(x);
+    if(!a||!b||vistosE[a]||vistosD[b]) return;
+    vistosE[a]=1; vistosD[b]=1; out.push([a,b]);
+  });
+  return out;
+}
+
 /* habilidade cujo conteúdo é uma lista de casos por nível */
 function porCasos(tag,area,banco){
   return {tag:tag,area:area,fn:function(nv){
@@ -359,14 +399,19 @@ var MAT=[
 {tag:"Soma",area:"mat",fn:function(nv){
   var a,b;
   if(nv<=1){a=rnd(1,5);b=rnd(1,5);} else if(nv===2){a=rnd(3,9);b=rnd(3,9);} else {a=rnd(10,29);b=rnd(5,19);}
+  /* no nível 3 ela digita: escolher entre 3 números deixa acertar no chute */
+  if(nv>=3) return digitar({t:"Quanto é?",fala:a+" mais "+b,conta:a+" + "+b+" = ?",
+    r:a+b,p:a+" + "+b+" = "+(a+b)+"."});
   var q={txt:"Quanto é?",fala:a+" mais "+b,conta:a+" + "+b+" = ?",porque:a+" + "+b+" = "+(a+b)+".",
     ops:opsNum(a+b,function(){return a+b+rnd(-4,4);}),cols:3};
-  if(nv<=2) q.fig=new Array(a+1).join("🔵 ")+" + "+new Array(b+1).join("🟢 ");
+  q.fig=new Array(a+1).join("🔵 ")+" + "+new Array(b+1).join("🟢 ");
   return q;
 }},
 {tag:"Subtração",area:"mat",fn:function(nv){
   var a,b;
   if(nv<=1){a=rnd(3,9);b=rnd(1,a-1);} else if(nv===2){a=rnd(8,18);b=rnd(2,8);} else {a=rnd(20,49);b=rnd(5,19);}
+  if(nv>=3) return digitar({t:"Quanto é?",fala:a+" menos "+b,conta:a+" − "+b+" = ?",
+    r:a-b,p:a+" − "+b+" = "+(a-b)+"."});
   var q={txt:"Quanto é?",fala:a+" menos "+b,conta:a+" − "+b+" = ?",porque:a+" − "+b+" = "+(a-b)+".",
     ops:opsNum(a-b,function(){return a-b+rnd(-4,4);}),cols:3};
   if(nv<=1) q.fig=new Array(a+1).join("🔵 ");
@@ -375,6 +420,8 @@ var MAT=[
 {tag:"Quanto falta",area:"mat",fn:function(nv){
   var tot=nv<=1?rnd(5,10):(nv===2?rnd(10,20):rnd(20,50));
   var tem=rnd(1,tot-1), falta=tot-tem;
+  if(nv>=3) return digitar({t:"Quanto falta para chegar em "+tot+"?",fala:tem+" mais quanto dá "+tot+"?",
+    conta:tem+" + ? = "+tot, r:falta, p:tem+" + "+falta+" = "+tot+"."});
   return {txt:"Quanto falta para chegar em "+tot+"?",fala:tem+" mais quanto dá "+tot+"?",
     conta:tem+" + ? = "+tot, porque:tem+" + "+falta+" = "+tot+".",
     ops:opsNum(falta,function(){return falta+rnd(-4,4);}),cols:3};
@@ -441,6 +488,8 @@ var MAT=[
 {tag:"Tabuada",area:"mat",fn:function(nv){
   var a=nv<=1?pick([2,10]):(nv===2?pick([2,3,5,10]):pick([2,3,4,5,6,10]));
   var b=nv<=1?rnd(1,5):rnd(1,10), r=a*b;
+  if(nv>=3) return digitar({t:"Quanto é?",fala:a+" vezes "+b,conta:a+" × "+b+" = ?",
+    r:r, p:a+" × "+b+" é somar "+a+" "+b+" vezes: "+r+"."});
   return {txt:"Quanto é?",fala:a+" vezes "+b,conta:a+" × "+b+" = ?",
     porque:a+" × "+b+" é somar "+a+" "+b+" vezes: "+r+".",
     ops:opsNum(r,function(){return r+a*rnd(-2,2);}),cols:3};
@@ -1203,6 +1252,90 @@ var CIENCIAS=[
  porCasos("Meu Brasil","ciencias",B_BRASIL)
 ];
 
+/* =========================================================
+   HABILIDADES QUE NÃO SÃO DE MÚLTIPLA ESCOLHA
+   ========================================================= */
+var INTERATIVAS=[
+
+/* ---------- montar a palavra com as sílabas ---------- */
+{tag:"Montar a palavra",area:"leitura",fn:function(nv){
+  var lista=nv<=1?P2:(nv===2?P3:P3.concat(P4));
+  var w=pick(lista);
+  return ordenar({t:"Monte a palavra na ordem certa:",
+    fala:"Monte a palavra "+w.p+", tocando nas sílabas na ordem certa.",
+    e:w.e, certo:w.s, p:w.p.toUpperCase()+" se separa assim: "+w.s.join(" - ")+"."});
+}},
+
+/* ---------- montar a frase ---------- */
+{tag:"Montar a frase",area:"leitura",fn:function(nv){
+  var banco=FRASES[nv]||FRASES[2];
+  var curtas=banco.filter(function(f){ var n=f.f.split(" ").length; return nv<=1?n<=4:(nv===2?n<=6:n<=8); });
+  var f=pick(curtas.length?curtas:banco);
+  return ordenar({t:"Coloque as palavras na ordem certa:",
+    fala:"Monte a frase tocando nas palavras na ordem certa.",
+    certo:f.f.split(" "), cola:false,
+    p:"A frase certa é: "+f.f+"."});
+}},
+
+/* ---------- colocar números em ordem ---------- */
+{tag:"Colocar em ordem",area:"mat",fn:function(nv){
+  var lim=nv<=1?20:(nv===2?100:999), n=nv<=1?3:4, set=[];
+  while(set.length<n){ var x=rnd(1,lim); if(set.indexOf(x)<0) set.push(x); }
+  var crescente=Math.random()<0.5;
+  var certo=set.slice().sort(function(a,b){ return crescente?a-b:b-a; });
+  return ordenar({t:"Toque nos números "+(crescente?"do MENOR para o MAIOR":"do MAIOR para o MENOR")+":",
+    fala:"Toque nos números "+(crescente?"do menor para o maior":"do maior para o menor")+".",
+    certo:certo, cola:false,
+    p:"Em ordem "+(crescente?"crescente":"decrescente")+": "+certo.join(", ")+"."});
+}},
+
+/* ---------- ligar os pares ---------- */
+{tag:"Ligar os pares",area:"racio",fn:function(nv){
+  var banco=[
+    {a:"🧤",b:"✋"},{a:"👟",b:"🦶"},{a:"🔑",b:"🚪"},{a:"🪥",b:"🦷"},
+    {a:"✏️",b:"📓"},{a:"☂️",b:"🌧️"},{a:"🕶️",b:"☀️"},{a:"🐝",b:"🍯"},
+    {a:"🐄",b:"🥛"},{a:"🐔",b:"🥚"},{a:"✂️",b:"📄"},{a:"🔨",b:"🔩"},
+    {a:"🎣",b:"🐟"},{a:"🧦",b:"👞"},{a:"🍞",b:"🧈"},{a:"🖌️",b:"🎨"}
+  ];
+  var n=nv<=1?3:4;
+  return ligar({t:"Ligue cada figura com o par dela:",
+    fala:"Toque numa figura da esquerda e depois no par dela na direita.",
+    pares:paresDistintos(banco,n,function(x){return x.a;},function(x){return x.b;}),
+    emojiEsq:true, emojiDir:true,
+    p:"Cada coisa combina com aquela que a gente usa junto com ela."});
+}},
+
+/* ---------- ligar inglês e português ---------- */
+{tag:"Ligar em inglês",area:"ingles",fn:function(nv){
+  var lista=vocab(nv), n=nv<=1?3:4;
+  return ligar({t:"Ligue a palavra em inglês com o que ela quer dizer:",
+    fala:"Toque numa palavra em inglês e depois no significado dela.",
+    pares:paresDistintos(lista,n,function(x){return x.en;},function(x){return x.pt;}),
+    p:"Cada palavra em inglês tem um significado só em português."});
+}},
+
+/* ---------- ligar a conta com o resultado ---------- */
+{tag:"Ligar as contas",area:"mat",fn:function(nv){
+  var n=nv<=1?3:4, vistos={}, lista=[], g=0;
+  while(lista.length<n && g++<200){
+    var a,b,sinal,r;
+    if(nv<=1){ a=rnd(1,6); b=rnd(1,6); sinal="+"; r=a+b; }
+    else if(nv===2){ if(Math.random()<0.5){ a=rnd(3,12); b=rnd(2,9); sinal="+"; r=a+b; }
+                     else { a=rnd(6,18); b=rnd(1,5); sinal="−"; r=a-b; } }
+    else { if(Math.random()<0.5){ a=rnd(10,40); b=rnd(5,20); sinal="+"; r=a+b; }
+           else { a=rnd(20,60); b=rnd(5,20); sinal="−"; r=a-b; } }
+    if(vistos[r]) continue;
+    vistos[r]=1;
+    lista.push([a+" "+sinal+" "+b, String(r)]);
+  }
+  return ligar({t:"Ligue cada conta com o resultado dela:",
+    fala:"Toque numa conta e depois no resultado certo.",
+    pares:lista,
+    p:lista.map(function(x){return x[0]+" = "+x[1];}).join("  ·  ")});
+}}
+
+];
+
 /* ---------- textos para ler em voz alta ---------- */
 var TEXTOS_VOZ={
  1:["O sapo pulou na lagoa. Ele viu um peixe azul.",
@@ -1238,7 +1371,22 @@ var TEXTOS_VOZ={
 };
 
 /* ---------- exportação ---------- */
-var TIPOS=LEITURA.concat(MAT).concat(RACIO).concat(INGLES).concat(CIENCIAS);
+/* confere se a questão tem o que o formato dela precisa para ser jogada */
+function jogavel(q){
+  if(!q||!q.txt) return false;
+  switch(q.formato){
+    case "digitar": return typeof q.resposta==="string" && /^[0-9]+$/.test(q.resposta);
+    case "ordenar": return Array.isArray(q.certo) && q.certo.length>=2 &&
+                           Array.isArray(q.pecas) && q.pecas.length===q.certo.length;
+    case "ligar":   return Array.isArray(q.pares) && q.pares.length>=2 &&
+                           q.pares.every(function(x){ return Array.isArray(x) && x.length===2 && x[0] && x[1]; });
+    default:        return Array.isArray(q.ops) && q.ops.length>=2 &&
+                           q.ops.filter(function(o){return o.ok;}).length===1;
+  }
+}
+
+
+var TIPOS=LEITURA.concat(MAT).concat(RACIO).concat(INGLES).concat(CIENCIAS).concat(INTERATIVAS);
 var POR_TAG={};
 TIPOS.forEach(function(t){ POR_TAG[t.tag]=t; });
 
@@ -1255,13 +1403,15 @@ window.QUESTOES={
   tipos:TIPOS,
   porTag:POR_TAG,
   tiposDaArea:function(area){ return TIPOS.filter(function(t){return t.area===area;}); },
+  /* uma questão só serve se o formato dela estiver completo */
+  jogavel:jogavel,
   /* gera uma questão de uma habilidade específica — usado pela revisão */
   gerar:function(tag,nivel){
     var t=POR_TAG[tag];
     if(!t) return null;
     var q;
     try{ q=t.fn(nivel||1); }catch(e){ return null; }
-    if(!q||!q.ops) return null;
+    if(!jogavel(q)) return null;
     q.tag=t.tag; q.area=t.area; q.nivel=nivel||1;
     return q;
   },
