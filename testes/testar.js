@@ -40,6 +40,33 @@ Q.tipos.forEach(function(t){
   if(typeof t.fn!=="function") falha("habilidade '"+t.tag+"' não tem função geradora");
 });
 
+/* ---------- 1b. duas palavras não podem dividir a mesma figura ----------
+   Se 🧊 valesse para "gelo" e "geladeira", a criança olharia a figura,
+   escreveria a palavra certa e seria marcada como errada — e "quantas
+   sílabas tem?" teria duas respostas certas. */
+(function(){
+  var vistos={}, repetidos=[];
+  ["Ler palavra","Escrever a palavra","Contar sílabas"].forEach(function(){});
+  /* percorre as figuras que as habilidades de leitura realmente usam */
+  var porFigura={};
+  var t=Q.porTag["Ler palavra"];
+  if(t){
+    for(var i=0;i<20000;i++){
+      var q=t.fn(3);
+      if(!q.fig) continue;
+      var certa=q.ops.filter(function(o){return o.ok;})[0].t;
+      porFigura[q.fig]=porFigura[q.fig]||{};
+      porFigura[q.fig][certa]=1;
+    }
+  }
+  Object.keys(porFigura).forEach(function(fig){
+    var palavras=Object.keys(porFigura[fig]);
+    if(palavras.length>1) repetidos.push(fig+" → "+palavras.join(", "));
+  });
+  if(repetidos.length)
+    falha("figuras usadas por mais de uma palavra (a criança acerta e é marcada errada): "+repetidos.join(" | "));
+})();
+
 /* ---------- 2. cada questão precisa ser jogável ---------- */
 Q.tipos.forEach(function(t){
   [1,2,3].forEach(function(nv){
@@ -69,6 +96,13 @@ Q.tipos.forEach(function(t){
         if(q.certo.length>1 && q.pecas.join("\u0001")===q.certo.join("\u0001") && new Set(q.certo).size>1)
           falha(onde+": as peças vieram já na ordem certa");
         chave="o|"+q.txt+"|"+q.certo.join(",");
+
+      }else if(q.formato==="escrever"){
+        if(!/^[A-ZÇ]{1,12}$/.test(q.resposta))
+          falha(onde+": resposta impossível de escrever no teclado — "+q.resposta);
+        if(!q.fig && !q.frase && !q.falaResposta)
+          falha(onde+": questão de escrever sem figura, sem palavra e sem áudio — a criança não tem pista nenhuma");
+        chave="e|"+q.txt+"|"+(q.fig||"")+"|"+(q.frase||"")+"|"+q.resposta;
 
       }else if(q.formato==="ligar"){
         if(q.pares.length<2||q.pares.length>5) falha(onde+": "+q.pares.length+" pares — fora do que cabe na tela");

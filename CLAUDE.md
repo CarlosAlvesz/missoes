@@ -40,6 +40,9 @@ Os dois rodam no GitHub Actions a cada push. **Não considere um trabalho pronto
   em `js/app.js`. O teste de interface cobre a saída pelo ✕ e o "Já li" no meio da gravação.
 - **Ao soltar uma URL de blob, desligue o tocador antes** (`player.removeAttribute("src")` +
   `load()`, e só então `revokeObjectURL`), senão o navegador tenta carregar um endereço morto.
+- **Duas palavras nunca podem dividir a mesma figura** em `P2`/`P3`/`P4`. Se 🧊 valesse para "gelo"
+  e "geladeira", "quantas sílabas tem?" teria duas respostas certas e a criança acertaria sendo
+  marcada errada. O teste do banco reprova se isso acontecer.
 - **A leitura em voz alta não pode ter botão de ouvir o texto.** É o ponto da atividade.
   Nas demais telas quem decide é `temNarrador(q)`, seguindo `cfg.narrador`.
 
@@ -63,6 +66,7 @@ Cada habilidade é `{tag, area, fn(nivel)}` e devolve um objeto. O campo `format
 - `"digitar"` → tecladinho de números (`resposta: "12"`)
 - `"ordenar"` → tocar nas peças em ordem (`certo: [...]`, `pecas: [...]`)
 - `"ligar"` → ligar pares (`pares: [[a,b],...]`)
+- `"escrever"` → teclado do alfabeto (`resposta: "CASA"`, só A-Z e Ç, sem acento)
 
 `QUESTOES.jogavel(q)` valida cada formato; `QUESTOES.gerar(tag,nivel)` é o que a revisão e o
 modo treinar usam.

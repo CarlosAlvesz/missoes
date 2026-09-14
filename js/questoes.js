@@ -62,6 +62,23 @@ function ordenar(o){
     fig:o.e, figGrande:!!o.e, porque:o.p, cola:o.cola!==false, dica:o.dica};
 }
 
+/* escrever a resposta letra por letra num teclado do alfabeto */
+function escrever(o){
+  return {formato:"escrever", txt:o.t, fala:o.fala||o.t, falaLang:o.lang,
+    fig:o.e, figGrande:!!o.e, frase:o.frase,
+    resposta:String(o.r).toUpperCase(), porque:o.p,
+    narradorObrigatorio:!!o.ouvirSempre, falaResposta:!!o.falaResposta};
+}
+
+/* acento quase não aparece no 1º ano: para escrever, só palavras sem ele */
+function semAcento(p){ return p.normalize("NFD").replace(/[\u0300-\u036f]/g,"")===p; }
+function paraEscrever(nv){
+  var base = nv<=1?P2:(nv===2?P3:P3.concat(P4));
+  var lista=base.filter(function(w){ return semAcento(w.p) && w.p.length<=11; });
+  return lista.length?lista:base;
+}
+function soletrar(p){ return p.toUpperCase().split("").join(" - "); }
+
 /* ligar cada figura da esquerda com o par dela na direita */
 function ligar(o){
   return {formato:"ligar", txt:o.t, fala:o.fala||o.t, pares:o.pares,
@@ -139,14 +156,14 @@ var P3=[ /* três sílabas */
 var P4=[ /* quatro sílabas */
  {p:"borboleta",s:["bor","bo","le","ta"],e:"🦋"},{p:"elefante",s:["e","le","fan","te"],e:"🐘"},
  {p:"melancia",s:["me","lan","ci","a"],e:"🍉"},{p:"bicicleta",s:["bi","ci","cle","ta"],e:"🚲"},
- {p:"dinossauro",s:["di","nos","sau","ro"],e:"🦕"},{p:"geladeira",s:["ge","la","dei","ra"],e:"🧊"},
+ {p:"dinossauro",s:["di","nos","sau","ro"],e:"🦕"},{p:"pirulito",s:["pi","ru","li","to"],e:"🍭"},
  {p:"computador",s:["com","pu","ta","dor"],e:"💻"},{p:"passarinho",s:["pas","sa","ri","nho"],e:"🐦"},
  {p:"abacaxi",s:["a","ba","ca","xi"],e:"🍍"},{p:"tartaruga",s:["tar","ta","ru","ga"],e:"🐢"},
  {p:"chocolate",s:["cho","co","la","te"],e:"🍫"},{p:"telefone",s:["te","le","fo","ne"],e:"☎️"},
  {p:"caranguejo",s:["ca","ran","gue","jo"],e:"🦀"},{p:"crocodilo",s:["cro","co","di","lo"],e:"🐲"},
  {p:"lagartixa",s:["la","gar","ti","xa"],e:"🦎"},{p:"termômetro",s:["ter","mô","me","tro"],e:"🌡️"},
  {p:"limonada",s:["li","mo","na","da"],e:"🍋"},{p:"ventilador",s:["ven","ti","la","dor"],e:"🌀"},
- {p:"cachoeira",s:["ca","cho","ei","ra"],e:"💦"},{p:"formiguinha",s:["for","mi","gui","nha"],e:"🐜"}
+ {p:"cachoeira",s:["ca","cho","ei","ra"],e:"💦"},{p:"aquarela",s:["a","qua","re","la"],e:"🎨"}
 ];
 function palavras(nv){ return nv<=1?P2:(nv===2?P2.concat(P3):P2.concat(P3).concat(P4)); }
 var TODAS=P2.concat(P3).concat(P4);
@@ -1490,6 +1507,37 @@ var INTERATIVAS=[
     p:"Cada palavra em inglês tem um significado só em português."});
 }},
 
+/* ---------- escrever a palavra ---------- */
+{tag:"Escrever a palavra",area:"leitura",fn:function(nv){
+  var w=pick(paraEscrever(nv));
+  return escrever({t:"Escreva o nome desta figura:",
+    fala:"Escreva o nome desta figura.",
+    e:w.e, r:w.p, p:w.p.toUpperCase()+" se escreve "+soletrar(w.p)+"."});
+}},
+
+/* ---------- ditado: ouve e escreve ---------- */
+{tag:"Ditado",area:"leitura",fn:function(nv){
+  var w=pick(paraEscrever(nv));
+  return escrever({t:"Ouça e escreva a palavra:",
+    fala:w.p, falaResposta:true, ouvirSempre:true,
+    r:w.p, p:w.p.toUpperCase()+" se escreve "+soletrar(w.p)+"."});
+}},
+
+/* ---------- completar a letra que falta ---------- */
+{tag:"Completar a palavra",area:"leitura",fn:function(nv){
+  var w=pick(paraEscrever(nv));
+  var letras=w.p.toUpperCase().split("");
+  /* no começo esconde uma letra do meio, mais fácil de deduzir pelo som;
+     depois pode ser qualquer uma */
+  var i = nv<=1 ? rnd(1,letras.length-2) : rnd(0,letras.length-1);
+  var falta=letras[i];
+  var comBuraco=letras.map(function(c,k){ return k===i?"_":c; }).join(" ");
+  return escrever({t:"Que letra está faltando?",
+    fala:"Que letra está faltando em "+w.p+"?",
+    e:w.e, frase:comBuraco, r:falta,
+    p:"A palavra é "+w.p.toUpperCase()+": "+soletrar(w.p)+"."});
+}},
+
 /* ---------- ligar a conta com o resultado ---------- */
 {tag:"Ligar as contas",area:"mat",fn:function(nv){
   var n=nv<=1?3:4, vistos={}, lista=[], g=0;
@@ -1552,6 +1600,7 @@ function jogavel(q){
   if(!q||!q.txt) return false;
   switch(q.formato){
     case "digitar": return typeof q.resposta==="string" && /^[0-9]+$/.test(q.resposta);
+    case "escrever": return typeof q.resposta==="string" && /^[A-ZÇ]{1,12}$/.test(q.resposta);
     case "ordenar": return Array.isArray(q.certo) && q.certo.length>=2 &&
                            Array.isArray(q.pecas) && q.pecas.length===q.certo.length;
     case "ligar":   return Array.isArray(q.pares) && q.pares.length>=2 &&

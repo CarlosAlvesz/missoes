@@ -117,6 +117,68 @@ function conferir(condicao,texto){
   conferir(await pg.locator(".porque").count()>0, "explica o porquê");
   conferir(await pg.locator(".tecla:not(:disabled)").count()===0, "o teclado trava depois de responder");
 
+  async function escolherNarradorCedo(v){
+    if(await pg.locator(".xbtn").isVisible()) await pg.click(".xbtn");
+    await pg.waitForTimeout(250);
+    await pg.click("#btn-pais");
+    await pg.fill("#pin-in","1234"); await pg.click("#pin-ok");
+    await pg.waitForTimeout(400);
+    await pg.selectOption("#cfg-narrador",v);
+    await pg.waitForTimeout(200);
+    await pg.click("#btn-pais");
+    await pg.waitForTimeout(300);
+    await pg.locator(".perfil:not(.novo)").first().click();
+    await pg.waitForTimeout(300);
+  }
+
+  console.log("\nFormato: escrever com o teclado de letras");
+  await abrir("Escrever a palavra",1);
+  conferir(await pg.locator(".letra").count()===29, "o teclado traz o alfabeto inteiro, apagar e confirmar");
+  var letrasTeclado=(await pg.locator(".letra").allTextContents()).slice(0,27).join("");
+  conferir(letrasTeclado==="ABCDEFGHIJKLMNOPQRSTUVWXYZÇ",
+           "as letras vêm em ordem alfabética, não em QWERTY");
+  var palavra=await pg.evaluate(function(){ return window.__q().resposta; });
+  conferir(await pg.locator(".casa").count()===palavra.length,
+           "há uma casinha para cada letra da palavra");
+  conferir(await pg.locator(".letra.ok").isDisabled(), "não dá para confirmar com a palavra incompleta");
+
+  async function digitarPalavra(txt){
+    for(var li=0; li<txt.length; li++)
+      await pg.locator(".letra",{hasText:new RegExp("^"+txt[li]+"$")}).first().click();
+  }
+  await digitarPalavra(palavra.slice(0,1));
+  conferir(await pg.locator(".casa.cheia").count()===1, "a letra tocada aparece na casinha");
+  await pg.locator(".letra.apaga").click();
+  await pg.waitForTimeout(100);
+  conferir(await pg.locator(".casa.cheia").count()===0, "o apagar tira a última letra");
+  await digitarPalavra(palavra);
+  conferir(!(await pg.locator(".letra.ok").isDisabled()), "o confirmar libera com a palavra completa");
+  await pg.locator(".letra.ok").click();
+  await pg.waitForTimeout(300);
+  conferir(await resultado()==="acerto", "escrever certo conta como acerto");
+
+  await abrir("Escrever a palavra",1);
+  var certa2=await pg.evaluate(function(){ return window.__q().resposta; });
+  var erradaP=(certa2[0]==="A"?"B":"A")+certa2.slice(1);
+  await digitarPalavra(erradaP);
+  await pg.locator(".letra.ok").click();
+  await pg.waitForTimeout(300);
+  conferir(await resultado()==="erro", "escrever errado conta como erro");
+  conferir(await pg.locator(".casas.gabarito").count()>0, "mostra a palavra certa quando erra");
+  conferir(await pg.locator(".letra:not(:disabled)").count()===0, "o teclado trava depois de responder");
+
+  await abrir("Completar a palavra",1);
+  conferir(await pg.locator(".casa").count()===1, "completar pede uma letra só");
+  conferir((await pg.textContent(".frase")).indexOf("_")>=0, "a palavra aparece com a letra faltando");
+
+  /* o ditado precisa do botão de ouvir mesmo com o narrador desligado */
+  await escolherNarradorCedo("nunca");
+  await abrir("Ditado",1);
+  conferir(await pg.locator(".qcard .qrow .speak").count()>0,
+           "o ditado mantém o botão de ouvir mesmo com o narrador desligado: a palavra falada é o enunciado");
+  conferir(await pg.locator(".frase").count()===0, "no ditado a palavra não aparece escrita");
+  await escolherNarradorCedo("ingles");
+
   console.log("\nFormato: colocar na ordem");
   await abrir("Montar a palavra",2);
   conferir(await pg.locator(".acoes-q .btn").isDisabled(), "não dá para conferir antes de montar tudo");
@@ -196,6 +258,12 @@ function conferir(condicao,texto){
     for(var w=0; w<9 && await pg.locator(".contagem").count(); w++) await pg.waitForTimeout(1000);
     if(await pg.locator("#tela-fim").isVisible()) break;
     if(await pg.locator(".op").count()) await pg.locator(".op").first().click();
+    else if(await pg.locator(".letra.ok").count()){
+      var alvoM=await pg.evaluate(function(){ return window.__q().resposta; });
+      for(var lm=0; lm<alvoM.length; lm++)
+        await pg.locator(".letra",{hasText:new RegExp("^"+alvoM[lm]+"$")}).first().click();
+      await pg.locator(".letra.ok").click();
+    }
     else if(await pg.locator(".tecla.ok").count()){ await pg.locator(".tecla").first().click(); await pg.locator(".tecla.ok").click(); }
     else if(await pg.locator(".banca .peca").count()){
       var c=await pg.locator(".banca .peca").count();

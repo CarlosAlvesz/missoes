@@ -53,6 +53,9 @@ function narrador(){
   return (n==="sempre"||n==="nunca") ? n : "ingles";
 }
 function temNarrador(q){
+  /* no ditado, ouvir a palavra é a própria pergunta: sem isso não há
+     atividade. Não é muleta, é o enunciado. */
+  if(q.narradorObrigatorio) return true;
   var n=narrador();
   if(n==="sempre") return true;
   if(n==="nunca") return false;
@@ -689,6 +692,7 @@ function pintarQuestao(){
   cabecalho(q,card);
   switch(q.formato){
     case "digitar": return pintarDigitar(q,card);
+    case "escrever": return pintarEscrever(q,card);
     case "ordenar": return pintarOrdenar(q,card);
     case "ligar":   return pintarLigar(q,card);
     default:        return pintarEscolha(q,card);
@@ -740,7 +744,7 @@ function pintarEscolha(q,card){
   card.appendChild(ops);
 }
 
-/* ---------- formato 2: digitar a resposta ---------- */
+/* ---------- formato 2: digitar números ---------- */
 function pintarDigitar(q,card){
   var max=q.resposta.length+1, digitado="", respondido=false;
   var visor=el("div","visor");
@@ -780,7 +784,75 @@ function pintarDigitar(q,card){
   atualizar();
 }
 
-/* ---------- formato 3: colocar na ordem certa ---------- */
+/* ---------- formato 3: escrever com o teclado de letras ----------
+   O alfabeto vem em ordem alfabética, não em QWERTY: com 6 anos a
+   criança conhece a ordem do ABC, não a do teclado do computador. */
+var ALFABETO="ABCDEFGHIJKLMNOPQRSTUVWXYZÇ".split("");
+
+function pintarEscrever(q,card){
+  var escrito="", respondido=false;
+  var alvo=q.resposta;
+
+  /* uma casinha para cada letra: a criança vê de quantas precisa */
+  var linha=el("div","casas");
+  linha.setAttribute("aria-live","polite");
+  card.appendChild(linha);
+
+  var teclado=el("div","letras");
+  var confirmar=null;
+
+  function desenharCasas(){
+    linha.innerHTML="";
+    for(var i=0;i<alvo.length;i++){
+      var c=el("span","casa"+(escrito[i]?" cheia":""), escrito[i]||"");
+      if(i===escrito.length && !respondido) c.classList.add("agora");
+      linha.appendChild(c);
+    }
+  }
+  function atualizar(){
+    if(respondido) return;
+    desenharCasas();
+    if(confirmar) confirmar.disabled = escrito.length!==alvo.length;
+  }
+
+  function tecla(rot,cls,acao){
+    var b=el("button","letra"+(cls?" "+cls:""),rot); b.type="button";
+    b.addEventListener("click",function(){
+      if(respondido) return;
+      if(somLigado()) SOM.toque();
+      acao(); atualizar();
+    });
+    teclado.appendChild(b);
+    return b;
+  }
+
+  ALFABETO.forEach(function(L){
+    tecla(L,null,function(){ if(escrito.length<alvo.length) escrito+=L; });
+  });
+  tecla("←","apaga",function(){ escrito=escrito.slice(0,-1); });
+  confirmar=tecla("✓","ok",function(){
+    if(escrito.length!==alvo.length) return;
+    respondido=true;
+    Array.prototype.forEach.call(teclado.children,function(c){ c.disabled=true; });
+    var certo = escrito===alvo;
+    linha.classList.add(certo?"certa":"errada");
+    desenharCasas();
+    if(!certo){
+      var g=el("div","casas gabarito");
+      alvo.split("").forEach(function(L){ g.appendChild(el("span","casa cheia",L)); });
+      card.insertBefore(g,teclado);
+    }
+    concluir(q,certo,card);
+  });
+
+  card.appendChild(teclado);
+  atualizar();
+
+  /* no ditado a palavra é dita assim que a pergunta aparece */
+  if(q.falaResposta) setTimeout(function(){ falar(q.fala,q.falaLang); },350);
+}
+
+/* ---------- formato 4: colocar na ordem certa ---------- */
 function pintarOrdenar(q,card){
   var montado=[];
   var tira=el("div","tira"+(q.cola?" cola":""));
@@ -835,7 +907,7 @@ function pintarOrdenar(q,card){
   desenhar();
 }
 
-/* ---------- formato 4: ligar os pares ---------- */
+/* ---------- formato 5: ligar os pares ---------- */
 function pintarLigar(q,card){
   var esq=shuffle(q.pares.map(function(x,i){ return {i:i,t:String(x[0])}; }));
   var dir=shuffle(q.pares.map(function(x,i){ return {i:i,t:String(x[1])}; }));

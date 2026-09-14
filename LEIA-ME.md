@@ -161,9 +161,22 @@ Com 3 alternativas a criança acerta 1 em 3 chutando, sem ler. Por isso o app te
 | **Digitar** a resposta num tecladinho | Soma, Subtração, Tabuada e Quanto falta, no nível 3 |
 | **Montar** tocando nas peças em ordem | Montar a palavra, Montar a frase, Colocar em ordem |
 | **Ligar** os pares | Ligar os pares, Ligar em inglês, Ligar as contas |
+| **Escrever** no teclado do alfabeto | Escrever a palavra, Ditado, Completar a palavra |
 
 Repare no pulo: no nível 3 de Soma ela não escolhe mais entre três números, ela **calcula e digita**.
 É outra tarefa mental — e é exatamente a diferença entre reconhecer e saber.
+
+**Escrever** é o mesmo salto na alfabetização. Escolher "casa" entre três opções e escrever
+C-A-S-A são habilidades diferentes, e a segunda é metade do que se aprende no 1º ano:
+
+- **Escrever a palavra** — vê a figura e escreve o nome dela.
+- **Ditado** — o app fala a palavra, ela escreve. Aqui o botão de ouvir existe sempre: a palavra
+  falada é o enunciado, não um atalho.
+- **Completar a palavra** — vê `F O _ U E T E` e escreve a letra que falta.
+
+O teclado traz o alfabeto **em ordem alfabética**, não em QWERTY: com 6 anos ela conhece a ordem do
+ABC, não a do teclado do computador. Há uma casinha para cada letra, então ela vê de quantas
+precisa, e o app só usa palavras sem acento — acento quase não se vê no 1º ano.
 
 **Treinar uma habilidade específica**
 
