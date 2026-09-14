@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Missões</title>
+<style>
+  body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;
+       font-family:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:#EEF3F8;color:#152230;text-align:center;padding:24px}
+  @media (prefers-color-scheme:dark){body{background:#0F151B;color:#E9EFF4}}
+  a{color:#1F63C9}
+  @media (prefers-color-scheme:dark){a{color:#5C9BEF}}
+</style>
+</head>
+<body>
+<!--
+  Esta página aparece quando alguém chega a um endereço que não existe
+  dentro do app. O caso que importa é o link de acesso enviado por e-mail:
+  se ele voltar para um endereço um pouco diferente (com ou sem
+  "index.html", por exemplo), o token de entrada vem no pedaço depois do #
+  e seria perdido num 404. Aqui ele é levado junto para a página certa.
+-->
+<p id="msg">Abrindo o Missões…<br><a id="link" href="/">continuar</a></p>
+<script>
+(function(){
+  /* a raiz do app é o primeiro pedaço do caminho: /missoes/ */
+  var partes = location.pathname.split("/").filter(function(p){ return p; });
+  var raiz = partes.length ? "/" + partes[0] + "/" : "/";
+  var destino = raiz + location.search + location.hash;
+
+  document.getElementById("link").href = destino;
+
+  /* replace, não assign: o endereço errado não fica no histórico do
+     navegador, então o botão voltar não traz a pessoa de volta para cá */
+  try{ location.replace(destino); }
+  catch(e){
+    document.getElementById("msg").innerHTML =
+      'Não consegui abrir sozinho. <a href="' + destino + '">Toque aqui para entrar no Missões</a>.';
+  }
+})();
+</script>
+</body>
+</html>

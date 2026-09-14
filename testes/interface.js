@@ -312,6 +312,28 @@ function conferir(condicao,texto){
   conferir(await pg.locator("#relatorio img, #sync-txt img, .relato img").count()===0,
            "nome digitado com HTML aparece como texto, não vira marcação");
 
+  /* ---------- endereço errado não pode perder o token de entrada ---------- */
+  console.log("\nEndereço errado (404)");
+  var ctx404=await navegador.newContext({viewport:{width:420,height:900},serviceWorkers:"block"});
+  var p404=await ctx404.newPage();
+  /* o servidor de teste responde 404 sem corpo; aqui o 404.html é servido
+     como o GitHub Pages faz, para conferir o desvio */
+  await p404.route("**/missoes/**",function(rota){
+    var u=new URL(rota.request().url());
+    if(/\.(js|css|png|woff2|webmanifest)$/.test(u.pathname)) return rota.continue();
+    rota.fulfill({status:404,contentType:"text/html",body:fs.readFileSync(path.join(raiz,"404.html"),"utf8")});
+  });
+  var destino404=null;
+  p404.on("framenavigated",function(f){ if(f===p404.mainFrame()) destino404=f.url(); });
+  await p404.goto("http://127.0.0.1:"+PORTA+"/missoes/index.html#access_token=abc123&type=magiclink")
+    .catch(function(){});
+  await p404.waitForTimeout(600);
+  conferir(destino404 && destino404.indexOf("/missoes/")>=0 && destino404.indexOf("index.html")<0,
+           "um endereço errado desvia para a raiz do app: "+destino404);
+  conferir(destino404 && destino404.indexOf("access_token=abc123")>=0,
+           "o token de entrada do e-mail sobrevive ao desvio");
+  await ctx404.close();
+
   /* ---------- sincronização: convite e diagnóstico ---------- */
   console.log("\nSincronização");
   /* o service worker serve o config.js do cache, então aqui ele fica bloqueado */
