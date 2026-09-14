@@ -210,6 +210,19 @@ Toda pergunta tem um "por quê". Quando a criança erra, além de acender a resp
 e lê a explicação — `9 − 7 = 2`, `BORBOLETA se separa assim: bor - bo - le - ta` — antes de liberar
 o botão de continuar.
 
+**A turma: irmãos e primos juntos**
+
+Quando há mais de uma criança cadastrada, aparece na tela inicial uma seção **A turma**, com o
+veículo e a sequência de cada uma, e um placar do grupo: *"Juntos, a turma já fez 12 missões esta
+semana!"*.
+
+De propósito **não existe classificação**: ninguém é primeiro nem último, e a ordem é alfabética.
+Com 6 anos um ranking motiva quem já vai bem e desanima justamente quem mais precisa. O que sobe
+quando alguém estuda é o placar do grupo — todo mundo ganha junto.
+
+Para os primos aparecerem aí, eles precisam estar na mesma família, o que exige a sincronização
+ligada (seção 3). No mesmo aparelho, irmãos já aparecem sem configurar nada.
+
 **Meta do dia e escudo**
 
 Cada criança tem uma meta de missões por dia (padrão: 2, dá para mudar em Adultos → Crianças).

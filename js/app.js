@@ -516,6 +516,73 @@ function pintarHome(){
     b.addEventListener("click",function(){ if(somLigado()) SOM.toque(); k==="voz"?abrirVoz():abrirMissao(k); });
     host.appendChild(b);
   });
+
+  pintarTurma(p);
+}
+
+/* =========================================================
+   A turma
+   Mostra as outras crianças — irmãos, primos — com o veículo e a
+   sequência de cada uma, mais o total que o grupo fez junto.
+
+   De propósito NÃO existe classificação: ninguém é primeiro nem
+   último. Com 6 anos, um ranking motiva quem já vai bem e desanima
+   justamente quem mais precisa. Cada um vê o próprio veículo crescer
+   e vê o placar do grupo, que só sobe quando alguém estuda.
+   ========================================================= */
+function inicioDaSemana(){
+  var d=new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()-d.getDay());   /* volta para domingo */
+  return d.getTime();
+}
+
+function pintarTurma(eu){
+  var host=$("turma");
+  host.innerHTML="";
+  var lista=perfisAtivos();
+  if(lista.length<2){ host.hidden=true; return; }   /* sozinho não há turma */
+  host.hidden=false;
+
+  var corte=inicioDaSemana();
+  var totalSemana=0;
+  lista.forEach(function(p){
+    totalSemana+=sessoesDe(p.id).filter(function(s){ return s.ts>=corte; }).length;
+  });
+
+  var topo=el("div","turma-topo");
+  topo.appendChild(el("h2","kt","A turma"));
+  var placar=el("div","turma-placar kt");
+  placar.textContent = totalSemana
+    ? ("Juntos, a turma já fez "+totalSemana+" missõe"+(totalSemana>1?"s":"")+" esta semana! 🎉")
+    : "Ninguém começou esta semana ainda. Seja o primeiro! 🚀";
+  topo.appendChild(placar);
+  host.appendChild(topo);
+
+  var grade=el("div","turma-grade");
+  /* ordem por nome, nunca por desempenho: ordenar por pontos seria um
+     ranking disfarçado */
+  lista.slice().sort(function(a,b){
+    return String(a.nome||"").localeCompare(String(b.nome||""),"pt");
+  }).forEach(function(p){
+    var estrelas=estrelasDe(p), nv=nivelFoguete(estrelas), seq=sequenciaDias(p);
+    var naSemana=sessoesDe(p.id).filter(function(s){ return s.ts>=corte; }).length;
+
+    var c=el("div","amigo"+(p.id===eu.id?" eu":""));
+    c.appendChild(el("span","av",p.avatar||"🚀"));
+    var box=el("span","txt");
+    box.appendChild(el("span","nm kt",(p.nome||"")+(p.id===eu.id?" (você)":"")));
+    box.appendChild(el("span","vei",FOGUETES[nv-1]+" "+NOME_VEIC[nv-1]));
+    var quando=el("span","quando");
+    quando.textContent = naSemana
+      ? (naSemana+" esta semana"+(seq>1?" · "+seq+" dias seguidos":""))
+      : "ainda não começou esta semana";
+    box.appendChild(quando);
+    c.appendChild(box);
+    if(seq>=3) c.appendChild(el("span","fogo","🔥"));
+    grade.appendChild(c);
+  });
+  host.appendChild(grade);
 }
 
 /* =========================================================

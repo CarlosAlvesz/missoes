@@ -244,6 +244,83 @@ function conferir(condicao,texto){
   conferir(await pg.locator("#relatorio img, #sync-txt img, .relato img").count()===0,
            "nome digitado com HTML aparece como texto, não vira marcação");
 
+  /* ---------- a turma ---------- */
+  /* em contexto próprio: a esta altura já existem crianças criadas pelos
+     testes anteriores, e aqui é preciso controlar quantas são */
+  console.log("\nA turma");
+  var ctxT=await navegador.newContext({viewport:{width:400,height:1000}});
+  var pt=await ctxT.newPage();
+  var errosT=[];
+  pt.on("pageerror",function(e){ errosT.push(e.message); });
+
+  function crianca(id,nome,av){
+    return {id:id,nome:nome,avatar:av,letra:"bastao",meta:2,niveis:{},revisao:{},recentes:[],
+      escudos:0,escudosGanhos:0,escudoUsado:{},removido:false,atualizado:Date.now()};
+  }
+  function atividade(perfil,i,diasAtras){
+    var q=Date.now()-diasAtras*86400000;
+    return {id:perfil+"-"+diasAtras+"-"+i,perfil:perfil,ts:q,dia:new Date(q).toISOString().slice(0,10),
+      area:"leitura",tipo:"quiz",treino:"",acertos:6,total:8,seg:120,estrelas:2,tags:{},texto:"",
+      nivel:1,autonomia:2,foco:2,fluencia:null,obs:"",avaliador:"",atualizado:q};
+  }
+
+  /* uma criança só: não há turma */
+  await pt.addInitScript(function(d){ localStorage.setItem("missoes.dados.v2",JSON.stringify(d)); },
+    {perfis:[crianca("s1","Sozinho","🐢")],sessoes:[],
+     cfg:{pin:"1234",ultimo:"s1",som:false,musica:false,narrador:"ingles"}});
+  await pt.goto(base);
+  await pt.waitForTimeout(400);
+  await pt.click(".perfil:not(.novo)");
+  await pt.waitForTimeout(400);
+  conferir(await pt.locator("#turma").isHidden(), "com uma criança só não existe turma");
+  await ctxT.close();
+
+  /* quatro crianças, com esforços bem diferentes */
+  var ctxT2=await navegador.newContext({viewport:{width:400,height:1000}});
+  var pt2=await ctxT2.newPage();
+  pt2.on("pageerror",function(e){ errosT.push(e.message); });
+  await pt2.addInitScript(function(d){ localStorage.setItem("missoes.dados.v2",JSON.stringify(d)); },{
+    perfis:[crianca("p1","Téo","🦖"),crianca("p2","Ana","🐼"),crianca("p3","Bia","🦄"),crianca("p4","Lucas","🐯")],
+    sessoes:[atividade("p1",0,0),atividade("p1",1,1),atividade("p1",2,2),
+             atividade("p3",0,0),
+             atividade("p4",0,0),atividade("p4",1,0),atividade("p4",2,1),atividade("p4",3,2)],
+    cfg:{pin:"1234",ultimo:"p1",som:false,musica:false,narrador:"ingles"}});
+  await pt2.goto(base);
+  await pt2.waitForTimeout(400);
+  await pt2.locator(".perfil:not(.novo)").first().click();
+  await pt2.waitForTimeout(500);
+
+  conferir(await pt2.locator("#turma").isVisible(), "com mais de uma criança a turma aparece");
+  conferir(await pt2.locator(".amigo").count()===4, "a turma mostra todas as crianças");
+  conferir(await pt2.locator(".amigo.eu").count()===1, "a própria criança fica destacada");
+  var placarT=await pt2.textContent(".turma-placar");
+  conferir(/turma/i.test(placarT), "existe um placar do grupo: "+JSON.stringify(placarT));
+
+  /* ordem por nome, nunca por desempenho: com 6 anos um ranking desanima
+     justamente quem mais precisa */
+  var nomesT=(await pt2.locator(".amigo .nm").allTextContents())
+    .map(function(x){ return x.replace(" (você)",""); });
+  var ordenadosT=nomesT.slice().sort(function(a,b){ return a.localeCompare(b,"pt"); });
+  conferir(nomesT.join("|")===ordenadosT.join("|"),
+           "a turma vem ordenada por nome, não por pontuação");
+  var textoTurma=await pt2.textContent("#turma");
+  conferir(textoTurma.indexOf("1º")<0 && textoTurma.indexOf("lugar")<0 && textoTurma.indexOf("ranking")<0,
+           "não existe posição, lugar nem ranking na turma");
+  conferir(textoTurma.indexOf("Lucas")>=0 && textoTurma.indexOf("Ana")>=0,
+           "quem estudou muito e quem não estudou aparecem do mesmo jeito");
+
+  /* o texto de cada criança não pode herdar a caixa da meta do dia */
+  var semCaixaT=await pt2.evaluate(function(){
+    var e=document.querySelector(".amigo .quando");
+    if(!e) return false;
+    var c=getComputedStyle(e);
+    return parseFloat(c.borderTopWidth)===0 && parseFloat(c.paddingTop)<4;
+  });
+  conferir(semCaixaT, "o texto da turma não herda a caixa de outra seção");
+  conferir(errosT.length===0, "nenhum erro de JavaScript na turma");
+  if(errosT.length) errosT.forEach(function(e){ console.log("      "+e); });
+  await ctxT2.close();
+
   /* ---------- leitura em voz alta: sem narrador, com gravação ---------- */
   console.log("\nLeitura em voz alta");
   await pg.goto(base);
