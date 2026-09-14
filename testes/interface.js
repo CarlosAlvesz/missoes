@@ -363,6 +363,23 @@ function conferir(condicao,texto){
   conferir(d3.indexOf("undefined")<0 && !/^[A-Za-z]*Error/.test(d3),
            "o diagnóstico nunca mostra erro técnico cru");
 
+  /* o app instalado abre em .../index.html, mas a URL liberada no Supabase
+     é a da pasta: o endereço de volta tem de ser o mesmo nos dois casos */
+  var voltas=await pgS.evaluate(function(){
+    var real=location.pathname, saida={};
+    ["/missoes/","/missoes/index.html","/","/index.html"].forEach(function(c){
+      /* recalcula a regra com cada caminho possível */
+      var caminho=c.replace(/index\.html?$/i,"");
+      if(!caminho) caminho="/";
+      saida[c]=location.origin+caminho;
+    });
+    return {saida:saida, atual:window.SYNC.enderecoDeVolta(), real:real};
+  });
+  conferir(voltas.saida["/missoes/"]===voltas.saida["/missoes/index.html"],
+           "a pasta e o index.html dão o mesmo endereço de volta");
+  conferir(voltas.atual.indexOf("index.html")<0,
+           "o endereço de volta nunca inclui index.html: "+voltas.atual);
+
   /* colar a chave secreta num arquivo público abriria o banco inteiro */
   function jwtFalso(papel){
     function b64(o){ return Buffer.from(JSON.stringify(o)).toString("base64url"); }

@@ -119,6 +119,10 @@ Em **Authentication → URL Configuration**:
 
 Sem isso o link de acesso enviado por e-mail volta para o lugar errado.
 
+> Repare na **barra no fim** do endereço. O app já cuida do resto: mesmo aberto como aplicativo
+> instalado (que abre em `.../missoes/index.html`), ele pede a volta para `.../missoes/`, que é
+> justamente o que você cadastrou aqui.
+
 ### 3.4 Criar a família e convidar os irmãos
 
 1. No app, entre em **Adultos** (PIN inicial `1234`) → **Sincronizar entre aparelhos**.

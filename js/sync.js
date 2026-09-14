@@ -91,8 +91,19 @@ function renovar(){
 }
 
 /* ---------- entrar / sair ---------- */
+/* Endereço para onde o link do e-mail deve voltar.
+   O app instalado abre em .../missoes/index.html, mas quem cadastra a URL
+   liberada no Supabase quase sempre cadastra .../missoes/. Tirar o
+   "index.html" faz os dois casos caírem no mesmo endereço, que é o que
+   está na lista de permitidos. */
+function enderecoDeVolta(){
+  var caminho=location.pathname.replace(/index\.html?$/i,"");
+  if(!caminho) caminho="/";
+  return location.origin+caminho;
+}
+
 function enviarLink(email){
-  var destino = location.origin + location.pathname;
+  var destino = enderecoDeVolta();
   return req("/auth/v1/otp",{metodo:"POST",corpo:{email:email,create_user:true,options:{email_redirect_to:destino}}});
 }
 
@@ -209,7 +220,7 @@ var K_CONVITE="missoes.convite.v1";
 
 function linkDeConvite(){
   if(!grupo||!grupo.codigo) return "";
-  return location.origin+location.pathname+"?familia="+encodeURIComponent(grupo.codigo);
+  return enderecoDeVolta()+"?familia="+encodeURIComponent(grupo.codigo);
 }
 
 /* guarda o código que veio no link, para usar depois que a pessoa entrar */
@@ -282,6 +293,7 @@ function diagnosticar(){
 window.SYNC={
   configurado:CONFIGURADO,
   linkDeConvite:linkDeConvite,
+  enderecoDeVolta:enderecoDeVolta,
   chavePerigosa:function(){ return chavePerigosa(CHAVE); },
   guardarConviteDaURL:guardarConviteDaURL,
   conviteGuardado:conviteGuardado,
