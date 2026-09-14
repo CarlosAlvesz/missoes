@@ -1515,6 +1515,10 @@ function pintarConteudo(){
    .forEach(function(p){ var d=el("div","kpi"); var b=el("b","txt",p[0]); d.appendChild(b); d.appendChild(el("span",null,p[1])); hn.appendChild(d); });
   host.appendChild(hn);
 
+  /* evolução ao longo das semanas */
+  host.appendChild(el("h3",null,"Está melhorando?"));
+  pintarEvolucao(host,quiz,ss);
+
   /* tabela */
   host.appendChild(el("h3",null,"Últimas atividades"));
   var sc=el("div","scroller");
@@ -1544,6 +1548,110 @@ function pintarConteudo(){
   });
   tb.appendChild(tbody); sc.appendChild(tb); host.appendChild(sc);
 }
+/* =========================================================
+   Evolução por semana
+   A pergunta que todo pai faz é "está melhorando?", e até agora o painel
+   só mostrava fotos do momento. Uma coluna por semana, uma série só —
+   acerto — porque misturar duas medidas de escalas diferentes no mesmo
+   gráfico é a maneira mais fácil de enganar quem lê. O número de
+   atividades vai escrito embaixo de cada semana, para uma semana de
+   100% com uma atividade só não parecer um triunfo.
+   ========================================================= */
+var SEMANAS_GRAFICO=8;
+
+function semanasDe(quiz,todas){
+  var fim=inicioDaSemana(), out=[], i;
+  for(i=SEMANAS_GRAFICO-1;i>=0;i--){
+    var ini=fim-i*7*864e5, fimSem=ini+7*864e5;
+    var doPeriodo=quiz.filter(function(s){ return s.ts>=ini && s.ts<fimSem; });
+    var todasNo=todas.filter(function(s){ return s.ts>=ini && s.ts<fimSem; });
+    var perguntas=0, acertos=0;
+    doPeriodo.forEach(function(s){ perguntas+=s.total; acertos+=s.acertos; });
+    out.push({
+      ini:ini,
+      rotulo:new Date(ini).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}),
+      pc: perguntas ? Math.round(acertos/perguntas*100) : null,
+      atividades: todasNo.length
+    });
+  }
+  return out;
+}
+
+/* coluna com o topo arredondado e a base reta, assente na linha de base */
+function colunaSVG(x,y,w,h,r){
+  r=Math.min(r, w/2, h);
+  var b=y+h;
+  return "M"+x+" "+b+" L"+x+" "+(y+r)+" Q"+x+" "+y+" "+(x+r)+" "+y+
+         " L"+(x+w-r)+" "+y+" Q"+(x+w)+" "+y+" "+(x+w)+" "+(y+r)+" L"+(x+w)+" "+b+" Z";
+}
+
+function pintarEvolucao(host,quiz,todas){
+  var semanas=semanasDe(quiz,todas);
+  var comDados=semanas.filter(function(w){ return w.pc!=null; });
+
+  if(comDados.length<2){
+    host.appendChild(el("div","vazio","Depois de duas semanas de atividades aparece aqui um gráfico do acerto semana a semana — dá para ver de relance se está subindo, estável ou caindo."));
+    return;
+  }
+
+  /* manchete: primeira semana com dados contra a última */
+  var pri=comDados[0], ult=comDados[comDados.length-1], dif=ult.pc-pri.pc;
+  var manchete=el("p","evolucao-manchete");
+  if(dif>=5) manchete.appendChild(el("b",null,"Subiu "+dif+" pontos"));
+  else if(dif<=-5) manchete.appendChild(el("b",null,"Caiu "+Math.abs(dif)+" pontos"));
+  else manchete.appendChild(el("b",null,"Estável"));
+  manchete.appendChild(document.createTextNode(
+    " — de "+pri.pc+"% em "+pri.rotulo+" para "+ult.pc+"% em "+ult.rotulo+"."));
+  host.appendChild(manchete);
+
+  /* medidas do desenho */
+  var L=34, R=10, T=22, B=40, W=340, A=190;
+  var largura=W-L-R, alturaPlot=A-T-B, base=T+alturaPlot;
+  var passo=largura/semanas.length;
+  var barra=Math.min(24, passo-8);
+
+  var svg='<svg viewBox="0 0 '+W+' '+A+'" width="100%" role="img" '+
+    'aria-label="Acerto por semana nas últimas '+semanas.length+' semanas">';
+
+  /* linhas de apoio discretas, em 0, 50 e 100% */
+  [0,50,100].forEach(function(v){
+    var y=base-(v/100)*alturaPlot;
+    svg+='<line x1="'+L+'" y1="'+y.toFixed(1)+'" x2="'+(W-R)+'" y2="'+y.toFixed(1)+
+         '" stroke="currentColor" stroke-width="1" opacity=".18"/>';
+    svg+='<text x="'+(L-7)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" '+
+         'font-size="10" fill="currentColor" opacity=".55">'+v+'%</text>';
+  });
+
+  semanas.forEach(function(w,i){
+    var cx=L+passo*i+passo/2, x=cx-barra/2;
+    if(w.pc==null){
+      /* semana em branco aparece como vazio, não como zero: a diferença importa */
+      svg+='<rect x="'+x.toFixed(1)+'" y="'+(base-4)+'" width="'+barra.toFixed(1)+
+           '" height="4" rx="2" fill="currentColor" opacity=".14"/>';
+    }else{
+      var h=Math.max(3,(w.pc/100)*alturaPlot), y=base-h;
+      svg+='<path d="'+colunaSVG(x,y,barra,h,4)+'" fill="var(--grafico)">'+
+           '<title>'+w.rotulo+": "+w.pc+'% de acerto em '+w.atividades+
+           (w.atividades===1?' atividade':' atividades')+'</title></path>';
+      /* só a última semana ganha o número em cima: rótulo em tudo vira ruído */
+      if(i===semanas.length-1)
+        svg+='<text x="'+cx.toFixed(1)+'" y="'+(y-7).toFixed(1)+'" text-anchor="middle" '+
+             'font-size="12" font-weight="700" fill="currentColor">'+w.pc+'%</text>';
+    }
+    svg+='<text x="'+cx.toFixed(1)+'" y="'+(base+15)+'" text-anchor="middle" '+
+         'font-size="9.5" fill="currentColor" opacity=".6">'+w.rotulo+'</text>';
+    svg+='<text x="'+cx.toFixed(1)+'" y="'+(base+29)+'" text-anchor="middle" '+
+         'font-size="9.5" fill="currentColor" opacity=".45">'+
+         (w.atividades?(w.atividades+"×"):"—")+'</text>';
+  });
+  svg+='</svg>';
+
+  var caixa=el("div","evolucao");
+  caixa.innerHTML=svg;   /* só números e datas gerados aqui, nada digitado por pessoa */
+  host.appendChild(caixa);
+  host.appendChild(el("div","evolucao-nota","A altura é o acerto da semana; o número embaixo é quantas atividades ela fez. Uma semana de 100% com uma atividade só diz pouco."));
+}
+
 function td(txt,num){ return el("td",num?"n":null,txt); }
 function media(a){ var v=a.filter(function(x){return typeof x==="number";}); if(!v.length) return null; return v.reduce(function(s,x){return s+x;},0)/v.length; }
 function rot(m,rr){ if(m==null) return "—"; return rr[Math.min(2,Math.max(0,Math.round(m)-1))]; }

@@ -7,6 +7,7 @@
   --line:#D2DCE6; --line-strong:#B6C4D2;
   --leitura:#1F63C9; --mat:#0E8F63; --racio:#7431D4; --ingles:#D2650B; --ciencias:#0E7C8C; --voz:#C0357A;
   --ok:#0E8F63; --quase:#C97A09;
+  --grafico:#1F63C9;   /* validado: contraste e faixa de luminosidade no claro */
   --sombra:0 2px 3px rgba(21,34,48,.06), 0 10px 24px -14px rgba(21,34,48,.30);
   --ui:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --escolar:"Andika","Comic Sans MS",var(--ui);
@@ -19,6 +20,7 @@
     --line:#2A3742; --line-strong:#3B4B58;
     --leitura:#5C9BEF; --mat:#3ECB99; --racio:#B48BF0; --ingles:#F1A340; --ciencias:#45BFD1; --voz:#EF74AC;
     --ok:#3ECB99; --quase:#EFB44A;
+    --grafico:#4A8AE0;   /* passo próprio para o escuro, não um clarão do mesmo azul */
     --sombra:0 2px 3px rgba(0,0,0,.5), 0 12px 26px -16px rgba(0,0,0,.9);
   }
 }
@@ -28,6 +30,7 @@
   --line:#2A3742; --line-strong:#3B4B58;
   --leitura:#5C9BEF; --mat:#3ECB99; --racio:#B48BF0; --ingles:#F1A340; --ciencias:#45BFD1; --voz:#EF74AC;
   --ok:#3ECB99; --quase:#EFB44A;
+  --grafico:#4A8AE0;
   --sombra:0 2px 3px rgba(0,0,0,.5), 0 12px 26px -16px rgba(0,0,0,.9);
 }
 
@@ -594,3 +597,17 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
   .casa{width:38px;height:50px;font-size:1.45rem}
   .letra{min-height:44px;font-size:1.05rem}
 }
+
+/* ---------- gráfico de evolução por semana ---------- */
+.evolucao-manchete{margin:0 0 10px;font-size:.95rem;color:var(--ink-soft)}
+.evolucao-manchete b{color:var(--ink)}
+.evolucao{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:12px 10px 6px;color:var(--ink-soft);
+}
+/* o SVG escala com a largura; sem limite, as colunas engordam muito
+   num painel largo e o gráfico fica pesado */
+.evolucao svg{display:block;max-width:440px;margin:0 auto}
+.evolucao path[fill]{transition:opacity .12s ease}
+.evolucao path[fill]:hover{opacity:.82;cursor:default}
+.evolucao-nota{font-size:.8rem;color:var(--ink-faint);margin-top:7px;line-height:1.45}

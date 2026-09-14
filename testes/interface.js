@@ -312,6 +312,89 @@ function conferir(condicao,texto){
   conferir(await pg.locator("#relatorio img, #sync-txt img, .relato img").count()===0,
            "nome digitado com HTML aparece como texto, não vira marcação");
 
+  /* ---------- gráfico de evolução ---------- */
+  console.log("\nGráfico de evolução no painel");
+  var ctxG=await navegador.newContext({viewport:{width:900,height:1400}});
+  var pgG=await ctxG.newPage();
+  var errosG=[];
+  pgG.on("pageerror",function(e){ errosG.push(e.message); });
+
+  var agoraG=Date.now();
+  var pcSemana=[52,58,null,64,71,69,78,83], sessoesG=[];
+  pcSemana.forEach(function(pc,i){
+    if(pc===null) return;
+    var n=2+(i%3);
+    for(var k=0;k<n;k++){
+      var ts=agoraG-((7-i)*7+k)*86400000;
+      sessoesG.push({id:"g"+i+"-"+k,perfil:"g1",ts:ts,dia:new Date(ts).toISOString().slice(0,10),
+        area:"leitura",tipo:"quiz",treino:"",acertos:Math.round(8*pc/100),total:8,seg:150,
+        estrelas:2,tags:{},texto:"",nivel:2,autonomia:2,foco:2,fluencia:null,obs:"",avaliador:"",atualizado:ts});
+    }
+  });
+  await pgG.addInitScript(function(d){ localStorage.setItem("missoes.dados.v2",JSON.stringify(d)); },{
+    perfis:[{id:"g1",nome:"Téo",avatar:"🦖",letra:"bastao",meta:2,niveis:{},revisao:{},recentes:[],
+      escudos:0,escudosGanhos:0,escudoUsado:{},removido:false,atualizado:agoraG}],
+    sessoes:sessoesG, cfg:{pin:"1234",ultimo:"g1",som:false,musica:false,narrador:"ingles"}});
+  await pgG.goto(base);
+  await pgG.waitForTimeout(400);
+  await pgG.click("#btn-pais");
+  await pgG.fill("#pin-in","1234"); await pgG.click("#pin-ok");
+  await pgG.waitForTimeout(600);
+
+  conferir(await pgG.locator(".evolucao svg").count()>0, "o painel mostra o gráfico de evolução");
+  conferir(await pgG.locator(".evolucao path[fill]").count()===7,
+           "uma coluna por semana com atividade (7 de 8)");
+  conferir(await pgG.locator(".evolucao rect").count()===1,
+           "a semana em branco aparece vazia, não como zero");
+  conferir(await pgG.locator('.evolucao text[font-weight="700"]').count()===1,
+           "só a última semana leva o número em cima (rótulo em tudo vira ruído)");
+  var mancheteG=await pgG.textContent(".evolucao-manchete");
+  conferir(/Subiu 3[0-9] pontos/.test(mancheteG), "a manchete diz quanto subiu: "+JSON.stringify(mancheteG.trim()));
+  conferir(await pgG.locator(".evolucao title").count()===7, "cada coluna tem a informação ao passar o rato");
+  var umTitulo=await pgG.locator(".evolucao title").last().textContent();
+  conferir(/% de acerto em \d+ atividade/.test(umTitulo), "a dica traz acerto e quantidade: "+JSON.stringify(umTitulo));
+
+  /* nunca dois eixos: só uma medida desenhada, o volume vai escrito */
+  var eixos=await pgG.locator(".evolucao text").allTextContents();
+  var comPorcento=eixos.filter(function(t){ return /%$/.test(t); });
+  conferir(comPorcento.length===4, "existe um eixo só, em porcentagem (3 linhas + o valor da última)");
+
+  /* a coluna não pode engordar num painel largo */
+  var grossura=await pgG.evaluate(function(){
+    var p=document.querySelector(".evolucao path[fill]");
+    return p ? p.getBoundingClientRect().width : 0;
+  });
+  conferir(grossura>0 && grossura<=32, "a coluna fica fina mesmo num painel largo ("+grossura.toFixed(0)+"px)");
+
+  conferir(errosG.length===0, "nenhum erro de JavaScript no gráfico");
+  if(errosG.length) errosG.forEach(function(e){ console.log("      "+e); });
+  await ctxG.close();
+
+  /* com pouca história não desenha gráfico nenhum — contexto novo, porque
+     recarregar a página reexecuta o script que semeia os dados */
+  var ctxG2=await navegador.newContext({viewport:{width:900,height:1200}});
+  var pgG2=await ctxG2.newPage();
+  await pgG2.addInitScript(function(d){ localStorage.setItem("missoes.dados.v2",JSON.stringify(d)); },{
+    perfis:[{id:"g1",nome:"Téo",avatar:"🦖",letra:"bastao",meta:2,niveis:{},revisao:{},recentes:[],
+      escudos:0,escudosGanhos:0,escudoUsado:{},removido:false,atualizado:agoraG}],
+    /* duas atividades hoje: uma semana só de história, de propósito */
+    sessoes:[0,1].map(function(k){
+      return {id:"h"+k,perfil:"g1",ts:agoraG,dia:new Date(agoraG).toISOString().slice(0,10),
+        area:"leitura",tipo:"quiz",treino:"",acertos:6,total:8,seg:150,estrelas:2,tags:{},
+        texto:"",nivel:2,autonomia:2,foco:2,fluencia:null,obs:"",avaliador:"",atualizado:agoraG};
+    }),
+    cfg:{pin:"1234",ultimo:"g1",som:false,musica:false,narrador:"ingles"}});
+  await pgG2.goto(base);
+  await pgG2.waitForTimeout(400);
+  await pgG2.click("#btn-pais");
+  await pgG2.fill("#pin-in","1234"); await pgG2.click("#pin-ok");
+  await pgG2.waitForTimeout(600);
+  conferir(await pgG2.locator(".evolucao svg").count()===0,
+           "com menos de duas semanas não desenha gráfico");
+  conferir(/duas semanas/.test(await pgG2.textContent("#conteudo-crianca")),
+           "e explica que ainda falta história para comparar");
+  await ctxG2.close();
+
   /* ---------- a turma ---------- */
   /* em contexto próprio: a esta altura já existem crianças criadas pelos
      testes anteriores, e aqui é preciso controlar quantas são */

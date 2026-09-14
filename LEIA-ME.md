@@ -132,7 +132,8 @@ As avaliações registram quem avaliou.
 2. Você marca três coisas: se fez sozinho, como ficou a concentração e uma observação livre.
 3. Se não estiver por perto, a atividade fica na fila de *esperando avaliação*.
 4. Nas leituras em voz alta você ouve a gravação ali mesmo, antes de dar a nota de fluência.
-5. Em **Adultos** você acompanha acerto por área, **o que reforçar**, a fila de revisão e o **relatório da semana**.
+5. Em **Está melhorando?** vê o acerto semana a semana, com quantas atividades teve em cada uma.
+6. Em **Adultos** você acompanha acerto por área, **o que reforçar**, a fila de revisão e o **relatório da semana**.
 
 **Dificuldade que se ajusta sozinha**
 
@@ -222,6 +223,16 @@ criança já errou e precisa de ajuda, não de um atalho.
 Toda pergunta tem um "por quê". Quando a criança erra, além de acender a resposta certa o app mostra
 e lê a explicação — `9 − 7 = 2`, `BORBOLETA se separa assim: bor - bo - le - ta` — antes de liberar
 o botão de continuar.
+
+**Está melhorando?**
+
+A pergunta que todo pai faz, e que o painel não respondia. Agora há um gráfico com uma coluna por
+semana, mostrando o acerto de cada uma, e uma frase resumindo: *"Subiu 34 pontos — de 54% em 26/07
+para 88% em 13/09."*
+
+Embaixo de cada semana vai escrito quantas atividades ela fez. Isso é de propósito: uma semana de
+100% com uma atividade só não é um triunfo, e o gráfico não pode deixar você achar que é. Semana em
+branco aparece vazia, nunca como zero — não fazer nada é diferente de errar tudo.
 
 **A turma: irmãos e primos juntos**
 

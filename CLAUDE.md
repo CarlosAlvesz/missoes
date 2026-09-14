@@ -58,6 +58,19 @@ Os dois rodam no GitHub Actions a cada push. **Não considere um trabalho pronto
 | Sincronização opcional (Supabase) | `js/sync.js` |
 | Aparência, tema claro e escuro | `estilo.css` |
 
+## Gráficos
+
+Existe um só: "Está melhorando?" em `pintarEvolucao()` (`js/app.js`). Regras que valem para
+qualquer outro que venha depois:
+
+- **Nunca dois eixos.** Duas medidas de escalas diferentes viram dois gráficos, ou uma delas vira
+  texto. Aqui a altura é o acerto e o número de atividades vai escrito embaixo.
+- **Uma cor por série, validada.** `--grafico` tem um passo próprio no tema escuro (`#4A8AE0`),
+  não é o azul claro do app: esse reprova na faixa de luminosidade sobre fundo escuro.
+- **Rótulo só no ponto que interessa** (aqui, a última semana). Número em toda coluna vira ruído.
+- **Semana sem dado aparece vazia, nunca como zero.**
+- **Coluna fina** (até ~24px): o SVG tem `max-width`, senão engorda num painel largo.
+
 ## Como uma questão funciona
 
 Cada habilidade é `{tag, area, fn(nivel)}` e devolve um objeto. O campo `formato` decide o desenho:
