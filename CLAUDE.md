@@ -34,6 +34,14 @@ Os dois rodam no GitHub Actions a cada push. **Não considere um trabalho pronto
   alta. `ajustarMusica(tela)` em `js/app.js` é quem decide; o teste de interface cobre isso.
 - **`js/musica.js` empresta o AudioContext do `SOM`** (`SOM.contexto()`). Não crie um segundo
   contexto: os navegadores limitam quantos uma página pode abrir.
+- **O áudio gravado nunca sai do aparelho.** Fica no IndexedDB (`js/gravador.js`), não entra em
+  `dados`, não vai para o `sync.js` nem para o arquivo de exportação. É voz de criança.
+- **Nunca deixe o microfone aberto.** Toda saída da tela de leitura passa por `largarMicrofone()`
+  em `js/app.js`. O teste de interface cobre a saída pelo ✕ e o "Já li" no meio da gravação.
+- **Ao soltar uma URL de blob, desligue o tocador antes** (`player.removeAttribute("src")` +
+  `load()`, e só então `revokeObjectURL`), senão o navegador tenta carregar um endereço morto.
+- **A leitura em voz alta não pode ter botão de ouvir o texto.** É o ponto da atividade.
+  Nas demais telas quem decide é `temNarrador(q)`, seguindo `cfg.narrador`.
 
 ## Onde fica o quê
 
@@ -43,6 +51,7 @@ Os dois rodam no GitHub Actions a cada push. **Não considere um trabalho pronto
 | Telas, revisão espaçada, níveis, painel | `js/app.js` |
 | Efeitos sonoros (Web Audio, sem arquivo) | `js/som.js` |
 | Música de fundo (Web Audio, sem arquivo) | `js/musica.js` |
+| Gravação da leitura (MediaRecorder + IndexedDB) | `js/gravador.js` |
 | Sincronização opcional (Supabase) | `js/sync.js` |
 | Aparência, tema claro e escuro | `estilo.css` |
 

@@ -472,3 +472,44 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 .opcao input{width:20px;height:20px;accent-color:var(--voz);cursor:pointer;flex:0 0 auto}
 .opcao input:disabled{cursor:default}
 .opcao input:disabled + span{opacity:.5}
+
+/* =========================================================
+   Gravação da leitura em voz alta
+   ========================================================= */
+.gravador{
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  margin:18px 0 16px;padding:16px 14px;border-radius:16px;
+  background:var(--surface-2);border:1px solid var(--line);
+}
+.grav-estado{font-size:1rem;font-weight:600;color:var(--ink-soft);text-align:center;line-height:1.4}
+.grav-botao{
+  font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  width:112px;height:112px;border-radius:50%;
+  border:3px solid var(--voz);background:var(--surface);color:var(--voz);
+  box-shadow:var(--sombra);transition:transform .1s ease,background .15s ease;
+}
+.grav-botao .ico{font-size:2.3rem;line-height:1}
+.grav-botao .rot{font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.grav-botao:hover{background:var(--surface-2)}
+.grav-botao:active{transform:scale(.95)}
+.grav-botao:focus-visible{outline:4px solid var(--voz);outline-offset:4px}
+.grav-botao:disabled{opacity:.5;cursor:default}
+.grav-botao.gravando{
+  background:var(--voz);color:#fff;border-color:var(--voz);
+  animation:pulsando 1.4s ease-in-out infinite;
+}
+@keyframes pulsando{
+  0%,100%{box-shadow:0 0 0 0 rgba(192,53,122,.45)}
+  50%{box-shadow:0 0 0 16px rgba(192,53,122,0)}
+}
+.grav-tempo{font-family:var(--num);font-size:1.5rem;font-weight:700;color:var(--voz);font-variant-numeric:tabular-nums}
+.grav-player{width:100%;max-width:340px;height:42px}
+.gravador-aviso{font-size:.92rem;color:var(--ink-soft);text-align:center;line-height:1.45}
+
+/* tocador na tela de avaliação do adulto */
+#aval-audio .grav-player{max-width:100%;margin-bottom:8px}
+#aval-audio .vazio{margin:0}
+
+@media (prefers-reduced-motion: reduce){
+  .grav-botao.gravando{animation:none;box-shadow:0 0 0 5px rgba(192,53,122,.3)}
+}

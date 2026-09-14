@@ -42,6 +42,22 @@ var MUSICA=window.MUSICA||{iniciar:function(){},parar:function(){},abaixar:funct
   levantar:function(){},tocando:function(){return false;}};
 
 function somLigado(){ return dados.cfg.som!==false; }
+
+/* O botão de ouvir a pergunta é uma muleta: com ele à mão, muita criança
+   toca para escutar em vez de decifrar a frase. Em inglês é o contrário —
+   ouvir a pronúncia é o próprio conteúdo da matéria. Por isso vem ligado
+   só em inglês, e o adulto decide o resto em Adultos → Ajustes.
+   Na leitura em voz alta ele nunca aparece. */
+function narrador(){
+  var n=dados.cfg.narrador;
+  return (n==="sempre"||n==="nunca") ? n : "ingles";
+}
+function temNarrador(q){
+  var n=narrador();
+  if(n==="sempre") return true;
+  if(n==="nunca") return false;
+  return q.area==="ingles";
+}
 function musicaLigada(){ return somLigado() && dados.cfg.musica!==false; }
 
 /* A música toca nas telas da criança. Sai de cena na leitura em voz alta
@@ -104,7 +120,7 @@ function calarVoz(){
    dados
    ========================================================= */
 var CHAVE="missoes.dados.v2";
-var dados={perfis:[],sessoes:[],cfg:{pin:"1234",ultimo:null,som:true,musica:true}};
+var dados={perfis:[],sessoes:[],cfg:{pin:"1234",ultimo:null,som:true,musica:true,narrador:"ingles"}};
 var erroAoSalvar=false;
 
 function carregar(){
@@ -115,7 +131,7 @@ function carregar(){
       if(p&&typeof p==="object"){
         dados.perfis=Array.isArray(p.perfis)?p.perfis:[];
         dados.sessoes=Array.isArray(p.sessoes)?p.sessoes:[];
-        dados.cfg=Object.assign({pin:"1234",ultimo:null,som:true,musica:true},p.cfg||{});
+        dados.cfg=Object.assign({pin:"1234",ultimo:null,som:true,musica:true,narrador:"ingles"},p.cfg||{});
       }
     }
   }catch(e){}
@@ -577,7 +593,7 @@ function abrirTreino(tag,perfilId){
 }
 
 function abrirMissao(area){
-  pararAvanco(); pararContagem();
+  pararAvanco(); pararContagem(); largarMicrofone();
   var qs=montarMissao(area,atualPerfil);
   if(!qs.length){ pintarHome(); mostrar("tela-home"); return; }
   atual={area:area,tipo:"quiz",qs:qs,i:0,acertos:0,tags:{},inicio:Date.now()};
@@ -622,9 +638,11 @@ function cabecalho(q,card){
 
   var row=el("div","qrow");
   row.appendChild(el("div","qtxt kt",q.txt));
-  var sp=el("button","speak","🔊"); sp.type="button"; sp.setAttribute("aria-label","Ouvir a pergunta");
-  sp.addEventListener("click",function(){ falar(q.fala||q.txt,q.falaLang); });
-  row.appendChild(sp);
+  if(temNarrador(q)){
+    var sp=el("button","speak","🔊"); sp.type="button"; sp.setAttribute("aria-label","Ouvir a pergunta");
+    sp.addEventListener("click",function(){ falar(q.fala||q.txt,q.falaLang); });
+    row.appendChild(sp);
+  }
   card.appendChild(row);
 
   if(q.frase) card.appendChild(el("div","frase kt",q.frase));
@@ -851,9 +869,13 @@ function pintarPreview(q,card){
   card.appendChild(el("div","qtag",q.tag));
   var row=el("div","qrow");
   row.appendChild(el("div","qtxt kt",q.preview.txt));
-  var sp=el("button","speak","🔊"); sp.type="button"; sp.setAttribute("aria-label","Ouvir");
-  sp.addEventListener("click",function(){ falar(q.preview.txt); });
-  row.appendChild(sp);
+  /* a tela de memorização segue a mesma regra do resto: senão o botão
+     de ouvir reaparecia aqui mesmo com o narrador desligado */
+  if(temNarrador(q)){
+    var sp=el("button","speak","🔊"); sp.type="button"; sp.setAttribute("aria-label","Ouvir");
+    sp.addEventListener("click",function(){ falar(q.preview.txt); });
+    row.appendChild(sp);
+  }
   card.appendChild(row);
   card.appendChild(el("div","figura",q.preview.fig));
   var c=el("div","contagem",String(q.preview.seg));
@@ -880,6 +902,11 @@ function pararContagem(){ if(timerPreview){ clearInterval(timerPreview); timerPr
    por todos os formatos de resposta. */
 var timerAvanco=null;
 function pararAvanco(){ if(timerAvanco){ clearTimeout(timerAvanco); timerAvanco=null; } }
+/* nunca deixar o microfone aberto ao sair de uma leitura pela metade */
+function largarMicrofone(){
+  if(atual && atual.encerrarGravacao){ atual.encerrarGravacao(); atual.encerrarGravacao=null; }
+  else if(window.GRAVADOR && GRAVADOR.gravando()) GRAVADOR.cancelar();
+}
 function avancar(){
   pararAvanco();
   atual.i++;
@@ -888,31 +915,165 @@ function avancar(){
 
 /* ---------- ler em voz alta ---------- */
 function abrirVoz(){
-  pararAvanco(); pararContagem();
+  pararAvanco(); pararContagem(); calarVoz();
   var feitas=sessoesDe(atualPerfil.id).filter(function(s){return s.tipo==="voz";}).length;
   var nv=nivelDe(atualPerfil,"Leitura em voz alta");
   var texto=Q.textoVoz(nv,feitas);
-  atual={area:"voz",tipo:"voz",texto:texto,inicio:Date.now(),acertos:0,qs:[],tags:{},nivel:nv};
+  atual={area:"voz",tipo:"voz",texto:texto,inicio:Date.now(),acertos:0,qs:[],tags:{},nivel:nv,gravacao:null};
   $("tela-missao").style.setProperty("--acc","var(--voz)");
   mostrar("tela-missao");
   $("dots").innerHTML=""; $("cnt").textContent="";
+
   var card=$("qcard"); card.innerHTML="";
   card.appendChild(el("div","qtag","Leitura em voz alta"));
-  var row=el("div","qrow");
-  row.appendChild(el("div","qtxt kt","Leia em voz alta para o adulto ouvir:"));
-  var sp=el("button","speak","🔊"); sp.type="button";
-  sp.title="Só clique se travar de verdade"; sp.setAttribute("aria-label","Ouvir o texto");
-  sp.addEventListener("click",function(){ falar(texto); });
-  row.appendChild(sp);
-  card.appendChild(row);
+  /* Aqui não existe botão de ouvir: quem tem de ler é a criança.
+     Se o app lesse primeiro, ela repetiria de cor em vez de decifrar. */
+  card.appendChild(el("div","qtxt kt","Leia em voz alta. Grave para o adulto ouvir depois:"));
   card.appendChild(el("div","frase kt",texto));
+
   var dica=el("div","retorno"); dica.style.color="var(--ink-soft)";
   dica.appendChild(el("span",null,"Leia devagar. Se travar numa palavra, respire e tente de novo."));
   card.appendChild(dica);
-  var b=el("button","btn wide","Já li! ✓"); b.type="button";
-  b.style.setProperty("--acc","var(--voz)");
-  b.addEventListener("click",terminar);
-  card.appendChild(b);
+
+  montarGravador(card,texto);
+}
+
+/* ---------- gravar a leitura ---------- */
+function montarGravador(card,texto){
+  var G=window.GRAVADOR;
+  var caixa=el("div","gravador");
+  card.appendChild(caixa);
+
+  var acoes=el("div","acoes-q");
+  var concluir=el("button","btn wide","Já li! ✓"); concluir.type="button";
+  concluir.style.setProperty("--acc","var(--voz)");
+  /* se a criança tocar aqui no meio da gravação, encerra e guarda o áudio
+     antes de terminar — perder a leitura em silêncio seria pior */
+  concluir.addEventListener("click",function(){
+    if(somLigado()) SOM.toque();
+    if(typeof encerrarAgora==="function" && encerrarAgora.gravando()){
+      concluir.disabled=true;
+      encerrarAgora().then(function(){ concluir.disabled=false; terminar(); });
+      return;
+    }
+    terminar();
+  });
+  var encerrarAgora=null;
+  acoes.appendChild(concluir);
+  card.appendChild(acoes);
+
+  /* aparelho sem microfone: o fluxo antigo continua valendo */
+  if(!G || !G.suportado()){
+    var aviso=el("div","gravador-aviso");
+    aviso.textContent="Neste aparelho não dá para gravar ("+((G&&G.porQueNao())||"sem suporte")+"). Leia em voz alta para o adulto escutar ao vivo.";
+    caixa.appendChild(aviso);
+    return;
+  }
+
+  var estado=el("div","grav-estado kt","Toque no microfone e leia o texto.");
+  var cronometro=el("div","grav-tempo","0:00");
+  cronometro.hidden=true;
+  var botao=el("button","grav-botao"); botao.type="button";
+  botao.setAttribute("aria-label","Começar a gravar");
+  botao.appendChild(el("span","ico","🎙️"));
+  botao.appendChild(el("span","rot","Gravar"));
+
+  var player=el("audio"); player.controls=true; player.className="grav-player"; player.hidden=true;
+  var refazer=el("button","chip","Gravar de novo"); refazer.type="button"; refazer.hidden=true;
+
+  caixa.appendChild(estado);
+  caixa.appendChild(botao);
+  caixa.appendChild(cronometro);
+  caixa.appendChild(player);
+  caixa.appendChild(refazer);
+
+  var gravando=false, t0=0, timer=null, urlAtual=null;
+  var LIMITE=120;   /* dois minutos é bem mais que qualquer texto daqui */
+
+  function tempo(){
+    var s=Math.floor((Date.now()-t0)/1000);
+    cronometro.textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+    if(s>=LIMITE) encerrar();
+  }
+  /* soltar o endereço do áudio enquanto o tocador ainda aponta para ele
+     faz o navegador tentar carregar um endereço morto. Primeiro desliga
+     o tocador, depois solta. */
+  function limparUrl(){
+    if(!urlAtual) return;
+    var antigo=urlAtual; urlAtual=null;
+    try{ player.pause(); }catch(e){}
+    try{ player.removeAttribute("src"); player.load(); }catch(e){}
+    setTimeout(function(){ try{ URL.revokeObjectURL(antigo); }catch(e){} },0);
+  }
+
+  function comecar(){
+    if(somLigado()) SOM.toque();
+    MUSICA.parar();
+    estado.textContent="Preparando o microfone...";
+    botao.disabled=true;
+    G.iniciar().then(function(){
+      gravando=true; t0=Date.now();
+      botao.disabled=false;
+      botao.classList.add("gravando");
+      botao.firstChild.textContent="⏹️";
+      botao.lastChild.textContent="Parei";
+      botao.setAttribute("aria-label","Parar de gravar");
+      estado.textContent="Gravando... pode ler!";
+      cronometro.hidden=false; cronometro.textContent="0:00";
+      player.hidden=true; refazer.hidden=true;
+      timer=setInterval(tempo,250);
+    }).catch(function(e){
+      botao.disabled=false;
+      estado.textContent = /denied|not allowed/i.test(e&&e.name+" "+e.message)
+        ? "O navegador não liberou o microfone. Dá para ler em voz alta assim mesmo e tocar em “Já li”."
+        : "Não consegui usar o microfone. Dá para ler em voz alta assim mesmo.";
+    });
+  }
+
+  function encerrar(){
+    if(!gravando) return Promise.resolve();
+    gravando=false;
+    clearInterval(timer); timer=null;
+    botao.classList.remove("gravando");
+    botao.firstChild.textContent="🎙️";
+    botao.lastChild.textContent="Gravar";
+    botao.setAttribute("aria-label","Começar a gravar");
+    estado.textContent="Guardando...";
+    return G.parar().then(function(blob){
+      var seg=Math.round((Date.now()-t0)/1000);
+      atual.gravacao={blob:blob,seg:seg};
+      limparUrl();
+      urlAtual=URL.createObjectURL(blob);
+      player.src=urlAtual;
+      player.hidden=false;
+      refazer.hidden=false;
+      botao.hidden=true;
+      cronometro.hidden=true;
+      estado.textContent="Pronto! Escute como ficou e toque em “Já li”.";
+      concluir.textContent="Já li! ✓";
+    }).catch(function(){
+      estado.textContent="A gravação não saiu. Tente de novo, ou toque em “Já li” assim mesmo.";
+      cronometro.hidden=true;
+    });
+  }
+
+  botao.addEventListener("click",function(){ gravando?encerrar():comecar(); });
+  encerrarAgora=function(){ return encerrar(); };
+  encerrarAgora.gravando=function(){ return gravando; };
+  refazer.addEventListener("click",function(){
+    atual.gravacao=null;
+    limparUrl();
+    player.hidden=true;
+    refazer.hidden=true; botao.hidden=false;
+    estado.textContent="Toque no microfone e leia o texto.";
+  });
+
+  /* sair no meio não pode deixar o microfone ligado */
+  atual.encerrarGravacao=function(){
+    if(timer){ clearInterval(timer); timer=null; }
+    if(gravando){ G.cancelar(); gravando=false; }
+    limparUrl();
+  };
 }
 
 /* ---------- fim ---------- */
@@ -929,6 +1090,15 @@ function terminar(){
   };
   dados.sessoes.push(s);
   atual.sessao=s;
+
+  /* o áudio vai para o IndexedDB, não para os dados sincronizados */
+  if(atual.gravacao && window.GRAVADOR){
+    s.temAudio=true;
+    GRAVADOR.salvar(s.id,atualPerfil.id,atual.gravacao.blob,atual.gravacao.seg).then(function(deu){
+      if(!deu){ s.temAudio=false; salvar(); }
+    });
+  }
+  if(atual.encerrarGravacao) atual.encerrarGravacao();
 
   var medalhasAntes = atual.tipo==="voz" ? [] : medalhasConquistadas(atualPerfil);
   if(atual.qs.length) lembrar(atualPerfil,atual.qs);
@@ -1014,8 +1184,35 @@ function abrirAval(s){
     ? (nome+" · leitura em voz alta · texto: “"+s.texto+"”")
     : (nome+" · "+area+" · acertou "+s.acertos+" de "+s.total+" em "+fmtT(s.seg));
   $("campo-fluencia").hidden = s.tipo!=="voz";
+  montarAudioDaAvaliacao(s);
   mostrar("tela-aval");
 }
+/* tocador para o adulto ouvir a leitura antes de dar a nota */
+var urlAval=null;
+function montarAudioDaAvaliacao(s){
+  var campo=$("campo-audio"), host=$("aval-audio");
+  host.innerHTML="";   /* tira o tocador antigo antes de soltar o endereço dele */
+  if(urlAval){
+    var anterior=urlAval; urlAval=null;
+    setTimeout(function(){ try{ URL.revokeObjectURL(anterior); }catch(e){} },0);
+  }
+  if(s.tipo!=="voz" || !s.temAudio || !window.GRAVADOR){ campo.hidden=true; return; }
+  campo.hidden=false;
+  host.appendChild(el("div","vazio","Carregando a gravação..."));
+  GRAVADOR.buscar(s.id).then(function(g){
+    host.innerHTML="";
+    if(!g||!g.blob){
+      host.appendChild(el("div","vazio","A gravação não está mais neste aparelho. O app guarda apenas as últimas "+GRAVADOR.guardarPorCrianca+" de cada criança, e o áudio não vai junto na sincronização."));
+      return;
+    }
+    urlAval=URL.createObjectURL(g.blob);
+    var a=el("audio"); a.controls=true; a.className="grav-player"; a.src=urlAval;
+    host.appendChild(a);
+    var pe=el("div","vazio","Ouça acompanhando o texto acima antes de marcar como foi a leitura.");
+    host.appendChild(pe);
+  });
+}
+
 function salvarAval(){
   if(!avalAtual) return;
   avalAtual.autonomia=avalVals.autonomia;
@@ -1056,6 +1253,8 @@ function pintarPais(){
   $("cfg-pin").value=dados.cfg.pin||"1234";
   $("cfg-musica").checked = dados.cfg.musica!==false;
   $("cfg-musica").disabled = !somLigado();
+  $("cfg-narrador").value = narrador();
+  pintarEspacoAudio();
   $("versao").textContent="versão "+VERSAO;
 }
 
@@ -1474,8 +1673,9 @@ $("btn-som").addEventListener("click",function(){
   ajustarMusica(telaAtual);
   if(somLigado()) SOM.toque();
 });
-$("btn-trocar").addEventListener("click",function(){ calarVoz(); pararContagem(); pararAvanco(); atualPerfil=null; pintarPerfis(); mostrar("tela-perfis"); });
+$("btn-trocar").addEventListener("click",function(){ calarVoz(); pararContagem(); pararAvanco(); largarMicrofone(); atualPerfil=null; pintarPerfis(); mostrar("tela-perfis"); });
 $("btn-pais").addEventListener("click",function(){
+  largarMicrofone();
   if(!$("tela-pais").hidden){ dados.cfg.entrouPais=false; pintarPerfis(); mostrar("tela-perfis"); return; }
   $("pin-in").value=""; $("pin-aviso").textContent="";
   mostrar("tela-pin");
@@ -1508,7 +1708,7 @@ $("pin-in").addEventListener("keydown",function(e){ if(e.key==="Enter") tentarPi
 $("pin-volta").addEventListener("click",function(){
   if(atualPerfil){ pintarHome(); mostrar("tela-home"); } else { pintarPerfis(); mostrar("tela-perfis"); }
 });
-$("sair").addEventListener("click",function(){ calarVoz(); pararContagem(); pararAvanco(); pintarHome(); mostrar("tela-home"); });
+$("sair").addEventListener("click",function(){ calarVoz(); pararContagem(); pararAvanco(); largarMicrofone(); pintarHome(); mostrar("tela-home"); });
 $("f-voltar").addEventListener("click",function(){ pintarHome(); mostrar("tela-home"); });
 $("f-pai").addEventListener("click",function(){ abrirAval(atual.sessao); });
 $("aval-pular").addEventListener("click",function(){
@@ -1536,6 +1736,49 @@ $("cfg-musica").addEventListener("change",function(){
   dados.cfg.musica=this.checked;
   salvar();
   ajustarMusica(telaAtual);
+});
+
+function pintarEspacoAudio(){
+  var txt=$("audio-espaco"), bt=$("audio-apagar");
+  if(!window.GRAVADOR || !GRAVADOR.suportado()){
+    txt.textContent="Este aparelho não grava áudio ("+((window.GRAVADOR&&GRAVADOR.porQueNao())||"sem suporte")+").";
+    bt.hidden=true; return;
+  }
+  bt.hidden=false;
+  GRAVADOR.tamanho().then(function(t){
+    if(!t.quantidade){
+      txt.textContent="Nenhuma gravação guardada ainda. Elas ficam só neste aparelho: não vão para a sincronização nem para o arquivo de histórico.";
+      bt.hidden=true;
+      return;
+    }
+    var mb=(t.bytes/1048576);
+    txt.textContent=t.quantidade+" gravaç"+(t.quantidade>1?"ões":"ão")+" ocupando "+
+      (mb<0.1?(Math.round(t.bytes/1024)+" KB"):(mb.toFixed(1)+" MB"))+
+      ". O app guarda as últimas "+GRAVADOR.guardarPorCrianca+" de cada criança e apaga as antigas sozinho. "+
+      "Ficam só neste aparelho: não vão para a sincronização nem para o arquivo de histórico.";
+  });
+}
+
+var apagarAudioArmado=false;
+$("audio-apagar").addEventListener("click",function(){
+  var b=this;
+  if(!apagarAudioArmado){
+    apagarAudioArmado=true; b.textContent="Tem certeza? Clique de novo";
+    setTimeout(function(){ apagarAudioArmado=false; b.textContent="Apagar todas as gravações"; },4000);
+    return;
+  }
+  apagarAudioArmado=false; b.textContent="Apagar todas as gravações";
+  if(!window.GRAVADOR) return;
+  GRAVADOR.apagarTudo().then(function(){
+    dados.sessoes.forEach(function(s){ if(s.temAudio){ s.temAudio=false; s.atualizado=Date.now(); } });
+    salvar();
+    pintarEspacoAudio();
+  });
+});
+
+$("cfg-narrador").addEventListener("change",function(){
+  dados.cfg.narrador=this.value;
+  salvar();
 });
 
 $("cfg-pin").addEventListener("input",function(){
@@ -1585,6 +1828,7 @@ $("limpar").addEventListener("click",function(){
     p.niveis={}; p.revisao={}; p.recentes=[]; p.revisoesFeitas=0;
     p.escudos=0; p.escudosGanhos=0; p.escudoUsado={}; p.atualizado=agora;
   });
+  if(window.GRAVADOR) GRAVADOR.apagarTudo().then(pintarEspacoAudio);
   salvar(); pintarPais();
 });
 

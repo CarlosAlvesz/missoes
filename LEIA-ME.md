@@ -131,7 +131,8 @@ As avaliações registram quem avaliou.
 1. Ao terminar, a criança clica em **Chamar o adulto**.
 2. Você marca três coisas: se fez sozinho, como ficou a concentração e uma observação livre.
 3. Se não estiver por perto, a atividade fica na fila de *esperando avaliação*.
-4. Em **Adultos** você acompanha acerto por área, **o que reforçar**, a fila de revisão e o **relatório da semana**.
+4. Nas leituras em voz alta você ouve a gravação ali mesmo, antes de dar a nota de fluência.
+5. Em **Adultos** você acompanha acerto por área, **o que reforçar**, a fila de revisão e o **relatório da semana**.
 
 **Dificuldade que se ajusta sozinha**
 
@@ -170,6 +171,38 @@ Saber o que está travando só ajuda se der para agir. Em **Adultos**, na seçã
 cada habilidade fraca tem um botão **Treinar isso ▸**. Ele abre na hora uma missão de 8 perguntas
 só daquela habilidade, no nível atual da criança. Vale como atividade normal e aparece no histórico
 marcada como treino.
+
+**Leitura em voz alta: a criança grava, o adulto ouve depois**
+
+Esta atividade **não tem botão de ouvir o texto**. Se o app lesse primeiro, a criança repetiria de cor
+em vez de decifrar — que é justamente o que se quer treinar.
+
+No lugar disso há um microfone. A criança toca, lê o texto, toca de novo para parar, e pode **se
+ouvir antes de entregar** — perceber sozinha que travou numa palavra ensina mais do que alguém
+dizer que ela travou. Se não gostar, grava de novo.
+
+Depois, quando você for avaliar, a gravação aparece ali na tela junto com o texto: dá para ouvir com
+calma, acompanhando as palavras, antes de marcar como foi a leitura. Comparando as gravações de
+semanas diferentes dá para ouvir o progresso.
+
+> **Onde o áudio fica:** só neste aparelho, na memória do navegador. Ele **não** vai para a
+> sincronização, **não** entra no arquivo de histórico e **não** é enviado para lugar nenhum. É voz
+> de criança. O app guarda as últimas 12 gravações de cada criança e apaga as antigas sozinho;
+> em Adultos → Ajustes dá para ver quanto espaço ocupam e apagar todas.
+>
+> Se o aparelho não tiver microfone, ou se o navegador não liberar, a atividade continua funcionando
+> do jeito antigo: a criança lê em voz alta ao vivo e você escuta.
+
+**O botão de ouvir a pergunta**
+
+Nas outras matérias existe um 🔊 que lê o enunciado. É útil para quem ainda não lê bem — e é também
+uma muleta: com ele à mão, muita criança toca para escutar em vez de ler.
+
+Por isso ele agora vem **ligado só em inglês**, onde ouvir a pronúncia é o próprio conteúdo da
+matéria. Em Adultos → Ajustes dá para mudar para *em todas as perguntas* ou *em nenhuma*.
+
+A explicação que aparece depois de um erro continua podendo ser ouvida em qualquer modo: ali a
+criança já errou e precisa de ajuda, não de um atalho.
 
 **Explicação quando erra**
 
@@ -218,6 +251,8 @@ desligar só a música e manter os efeitos.
 | Treinar uma habilidade específica | Adultos → o que reforçar → **Treinar isso** |
 | Mudar a meta de missões por dia | dentro do app, em Adultos → Crianças |
 | Ligar e desligar os sons e a música | botão 🔊 no topo |
+| Mudar o botão de ouvir a pergunta | Adultos → Ajustes |
+| Ver espaço das gravações e apagá-las | Adultos → Ajustes |
 | Desligar só a música de fundo | Adultos → Ajustes |
 | Acrescentar palavras, contas ou perguntas | `js/questoes.js` |
 | Mudar cores e tamanhos | `estilo.css` |
@@ -227,6 +262,7 @@ desligar só a música e manter os efeitos.
 | Mudar quantas estrelas sobem de nível | `js/app.js`, constante `POR_NIVEL` |
 | Mudar os sons | `js/som.js` |
 | Mudar a música (andamento, escala, volume) | `js/musica.js` |
+| Mudar quantas gravações ficam guardadas | `js/gravador.js`, `GUARDAR_POR_CRIANCA` |
 
 **Esqueceu o PIN dos adultos?** Ele fica guardado no próprio navegador. Abra o app, pressione F12
 (ou, no celular, abra num computador), vá em *Application → Local Storage*, procure a chave
@@ -251,6 +287,7 @@ js/questoes.js             o banco de questões, por habilidade e nível
 js/app.js                  telas, perfis, níveis, revisão, recompensas, painel
 js/som.js                  efeitos sonoros, gerados pelo navegador
 js/musica.js               música de fundo, também gerada na hora
+js/gravador.js             grava a leitura em voz alta e guarda no aparelho
 js/sync.js                 sincronização entre aparelhos
 testes/testar.js           confere o banco de questões inteiro
 testes/interface.js        joga o app num navegador de verdade
@@ -261,6 +298,7 @@ fontes/                    fonte escolar Andika (SIL Open Font License)
 
 Sem sincronização, tudo fica no navegador do aparelho. Em Adultos → Ajustes há
 **Salvar histórico em arquivo** e **Abrir arquivo de histórico** para levar os dados na mão.
+As gravações de áudio ficam de fora desse arquivo de propósito: são pesadas e são voz de criança.
 
 ## 7. Mexer no banco de questões sem quebrar nada
 

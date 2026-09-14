@@ -1,5 +1,5 @@
 /* Service worker: deixa o app abrir sem internet. */
-var CACHE = "missoes-v4";
+var CACHE = "missoes-v5";
 var ARQUIVOS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ var ARQUIVOS = [
   "./js/questoes.js",
   "./js/som.js",
   "./js/musica.js",
+  "./js/gravador.js",
   "./js/sync.js",
   "./js/app.js",
   "./manifest.webmanifest",

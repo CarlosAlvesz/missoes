@@ -44,16 +44,33 @@ function conferir(condicao,texto){
   }
 
   var srv=servidor();
-  await new Promise(function(ok){ srv.listen(PORTA,ok); });
+  try{
+    await new Promise(function(ok,erro){
+      srv.once("error",erro);
+      srv.listen(PORTA,function(){ srv.removeListener("error",erro); ok(); });
+    });
+  }catch(e){
+    if(e && e.code==="EADDRINUSE"){
+      console.log("A porta "+PORTA+" já está ocupada — provavelmente um teste anterior ficou rodando.");
+      console.log("Feche-o e tente de novo, ou rode:  pkill -f testes/interface.js");
+    }else{
+      console.log("Não consegui subir o servidor de teste: "+(e&&e.message));
+    }
+    process.exit(1);
+  }
 
-  var lancar={};
+  var lancar={args:["--use-fake-device-for-media-stream","--use-fake-ui-for-media-stream"]};
   if(process.env.CHROMIUM_PATH) lancar.executablePath=process.env.CHROMIUM_PATH;
   var navegador=await playwright.chromium.launch(lancar);
-  var pg=await navegador.newPage({viewport:{width:390,height:900}});
+  var contexto=await navegador.newContext({viewport:{width:390,height:900},permissions:["microphone"]});
+  var pg=await contexto.newPage();
 
   var errosJS=[];
   pg.on("console",function(m){ if(m.type()==="error") errosJS.push("console: "+m.text()); });
   pg.on("pageerror",function(e){ errosJS.push("erro de página: "+e.message); });
+  if(process.env.DEPURAR_REDE) pg.on("requestfailed",function(r){
+    console.log("      [rede] falhou: "+r.url().slice(0,120)+" — "+(r.failure()&&r.failure().errorText));
+  });
 
   var base="http://127.0.0.1:"+PORTA+"/index.html?teste=1";
   await pg.goto(base);
@@ -226,6 +243,135 @@ function conferir(condicao,texto){
   await pg.waitForTimeout(300);
   conferir(await pg.locator("#relatorio img, #sync-txt img, .relato img").count()===0,
            "nome digitado com HTML aparece como texto, não vira marcação");
+
+  /* ---------- leitura em voz alta: sem narrador, com gravação ---------- */
+  console.log("\nLeitura em voz alta");
+  await pg.goto(base);
+  await pg.waitForTimeout(300);
+  await pg.click(".perfil:not(.novo)");
+  await pg.waitForTimeout(300);
+  await pg.click(".mcard.m-voz");
+  await pg.waitForTimeout(400);
+  conferir(await pg.locator(".qcard .qrow .speak").count()===0,
+           "não existe botão de ouvir o texto: quem lê é a criança");
+  conferir((await pg.textContent(".frase")).length>10, "o texto para ler aparece");
+
+  var gravaAqui=await pg.evaluate(function(){ return window.GRAVADOR && window.GRAVADOR.suportado(); });
+  conferir(gravaAqui, "este navegador consegue gravar áudio");
+  if(gravaAqui){
+    conferir(await pg.locator(".grav-botao").count()>0, "o botão de gravar aparece");
+    await pg.locator(".grav-botao").click();
+    await pg.waitForTimeout(900);
+    conferir(await pg.evaluate(function(){ return window.GRAVADOR.gravando(); }), "a gravação começa ao tocar no microfone");
+    conferir(await pg.locator(".grav-botao.gravando").count()>0, "o botão mostra que está gravando");
+    await pg.waitForTimeout(1600);
+    conferir(/0:0[123]/.test(await pg.textContent(".grav-tempo")), "o cronômetro anda");
+
+    await pg.locator(".grav-botao").click();
+    await pg.waitForTimeout(1400);
+    conferir(!(await pg.evaluate(function(){ return window.GRAVADOR.gravando(); })), "a gravação para");
+    conferir(await pg.locator(".grav-player").isVisible(), "a criança pode se ouvir antes de entregar");
+    conferir(await pg.locator(".grav-botao").isHidden(), "o botão de gravar dá lugar ao tocador");
+    conferir(await pg.locator(".chip:has-text('Gravar de novo')").count()>0, "dá para gravar de novo");
+
+    await pg.locator(".acoes-q .btn").click();
+    await pg.waitForTimeout(1200);
+    var guardou=await pg.evaluate(function(){
+      var d=JSON.parse(localStorage.getItem("missoes.dados.v2"));
+      var s=d.sessoes[d.sessoes.length-1];
+      return window.GRAVADOR.buscar(s.id).then(function(g){
+        return {marcada:!!s.temAudio, achou:!!(g&&g.blob), bytes:g&&g.blob?g.blob.size:0};
+      });
+    });
+    conferir(guardou.marcada && guardou.achou && guardou.bytes>0,
+             "a gravação fica guardada no aparelho ("+guardou.bytes+" bytes)");
+
+    /* o adulto precisa conseguir ouvir antes de dar a nota */
+    await pg.click("#f-pai");
+    await pg.waitForTimeout(1000);
+    conferir(await pg.locator("#campo-audio").isVisible(), "a avaliação mostra a gravação para o adulto");
+    conferir(await pg.locator("#aval-audio .grav-player").count()>0, "o adulto tem um tocador para ouvir");
+
+    /* sair no meio de uma gravação não pode deixar o microfone ligado */
+    await pg.click("#aval-pular");
+    await pg.waitForTimeout(400);
+    await pg.goto(base);
+    await pg.waitForTimeout(300);
+    await pg.click(".perfil:not(.novo)");
+    await pg.waitForTimeout(300);
+    await pg.click(".mcard.m-voz");
+    await pg.waitForTimeout(400);
+    await pg.locator(".grav-botao").click();
+    await pg.waitForTimeout(900);
+    await pg.locator(".xbtn").click();
+    await pg.waitForTimeout(500);
+    conferir(!(await pg.evaluate(function(){ return window.GRAVADOR.gravando(); })),
+             "sair pelo ✕ no meio da gravação desliga o microfone");
+
+    /* tocar em "Já li" enquanto grava tem de salvar, não perder */
+    await pg.click(".mcard.m-voz");
+    await pg.waitForTimeout(400);
+    await pg.locator(".grav-botao").click();
+    await pg.waitForTimeout(1400);
+    await pg.locator(".acoes-q .btn").click();
+    await pg.waitForTimeout(1600);
+    var naoPerdeu=await pg.evaluate(function(){
+      var d=JSON.parse(localStorage.getItem("missoes.dados.v2"));
+      var s=d.sessoes[d.sessoes.length-1];
+      return window.GRAVADOR.buscar(s.id).then(function(g){ return !!(g&&g.blob&&g.blob.size); });
+    });
+    conferir(naoPerdeu, "tocar em “Já li” no meio da gravação salva o áudio em vez de perder");
+    await pg.click("#f-voltar");
+    await pg.waitForTimeout(300);
+  }
+
+  /* ---------- botão de ouvir a pergunta ---------- */
+  console.log("\nBotão de ouvir a pergunta");
+  async function temBotaoOuvir(tag){
+    await pg.evaluate(function(t){ window.__teste(t,1); },tag);
+    await pg.waitForTimeout(200);
+    return (await pg.locator(".qcard .qrow .speak").count())>0;
+  }
+  async function escolherNarrador(v){
+    if(await pg.locator(".xbtn").isVisible()) await pg.click(".xbtn");
+    await pg.waitForTimeout(250);
+    await pg.click("#btn-pais");
+    await pg.fill("#pin-in","1234"); await pg.click("#pin-ok");
+    await pg.waitForTimeout(400);
+    await pg.selectOption("#cfg-narrador",v);
+    await pg.waitForTimeout(200);
+    await pg.click("#btn-pais");
+    await pg.waitForTimeout(300);
+    await pg.click(".perfil:not(.novo)");
+    await pg.waitForTimeout(300);
+  }
+  conferir(await temBotaoOuvir("Vocabulário"), "por padrão, inglês mantém o botão de ouvir (é a pronúncia que se aprende)");
+  conferir(!(await temBotaoOuvir("Ler palavra")), "por padrão, leitura não tem botão de ouvir");
+  conferir(!(await temBotaoOuvir("Soma")), "por padrão, matemática não tem botão de ouvir");
+  conferir(!(await temBotaoOuvir("Memória")), "a tela de memorização também respeita a regra");
+
+  await escolherNarrador("sempre");
+  conferir(await temBotaoOuvir("Ler palavra"), "no modo 'em todas', leitura volta a ter o botão");
+  await escolherNarrador("nunca");
+  conferir(!(await temBotaoOuvir("Vocabulário")), "no modo 'em nenhuma', nem inglês tem o botão");
+
+  /* a explicação do erro continua podendo ser ouvida */
+  await pg.evaluate(function(){ window.__teste("Soma",1); });
+  await pg.waitForTimeout(250);
+  var certa=await pg.evaluate(function(){
+    var q=window.__q();
+    return q.ops.filter(function(o){return o.ok;})[0].t;
+  });
+  var qtd=await pg.locator(".op").count();
+  for(var oi=0; oi<qtd; oi++){
+    if((await pg.locator(".op").nth(oi).textContent())!==String(certa)){
+      await pg.locator(".op").nth(oi).click(); break;
+    }
+  }
+  await pg.waitForTimeout(400);
+  conferir(await pg.locator(".porque .speak").count()>0,
+           "mesmo com o narrador desligado, a explicação do erro pode ser ouvida");
+  await escolherNarrador("ingles");
 
   /* ---------- música de fundo ---------- */
   console.log("\nMúsica de fundo");

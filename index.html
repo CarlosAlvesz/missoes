@@ -109,6 +109,10 @@
             <button type="button" data-v="1">Muito disperso</button>
           </div>
         </div>
+        <div class="campo" id="campo-audio" hidden>
+          <label>Gravação da criança lendo</label>
+          <div id="aval-audio"></div>
+        </div>
         <div class="campo" id="campo-fluencia" hidden>
           <label>Como foi a leitura em voz alta?</label>
           <div class="escolhas" id="e-fluencia">
@@ -173,6 +177,17 @@
         <div class="pin"><input type="text" id="cfg-pin" inputmode="numeric" maxlength="4" autocomplete="off"></div>
       </div>
       <div class="campo">
+        <label for="cfg-narrador">Botão de ouvir a pergunta</label>
+        <select id="cfg-narrador">
+          <option value="ingles">Só em inglês (recomendado)</option>
+          <option value="sempre">Em todas as perguntas</option>
+          <option value="nunca">Em nenhuma pergunta</option>
+        </select>
+        <p class="dica">Com o botão à mão, muita criança toca para escutar em vez de ler.
+        Em inglês é o contrário: ouvir a pronúncia é o próprio conteúdo. Na leitura em voz alta
+        o botão nunca aparece. A explicação que surge depois de um erro continua podendo ser ouvida.</p>
+      </div>
+      <div class="campo">
         <label class="opcao" for="cfg-musica">
           <input type="checkbox" id="cfg-musica">
           <span>Música de fundo durante as atividades</span>
@@ -180,6 +195,11 @@
         <p class="dica">Ela é baixinha, abaixa sozinha quando o app fala e não toca na leitura em voz alta.
         Se a criança se distrai com facilidade, vale desligar e comparar a concentração no relatório da semana.
         O botão 🔊 no topo desliga tudo de uma vez, música e efeitos.</p>
+      </div>
+      <div class="campo">
+        <label>Gravações da leitura em voz alta</label>
+        <p class="dica" id="audio-espaco">—</p>
+        <button class="chip" id="audio-apagar" type="button">Apagar todas as gravações</button>
       </div>
       <div class="acoes">
         <button class="chip" id="exp" type="button">Salvar histórico em arquivo</button>
@@ -238,6 +258,7 @@
 <script src="js/questoes.js"></script>
 <script src="js/som.js"></script>
 <script src="js/musica.js"></script>
+<script src="js/gravador.js"></script>
 <script src="config.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/app.js"></script>
