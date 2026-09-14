@@ -107,6 +107,25 @@ function enviarLink(email){
   return req("/auth/v1/otp",{metodo:"POST",corpo:{email:email,create_user:true,options:{email_redirect_to:destino}}});
 }
 
+/* Entrar pelo código de 6 números que veio no e-mail.
+   Num site estático como este, clicar no link do e-mail depende de uma
+   cadeia de redirecionamentos que falha por pouco (endereço de volta,
+   lista de permitidos, o app instalado abrindo noutro caminho). O código
+   não depende de nada disso, e ainda funciona quando o e-mail é aberto
+   num aparelho diferente daquele onde a criança estuda. */
+function entrarComCodigo(email,codigo){
+  var limpo=String(codigo||"").replace(/\D/g,"");
+  if(limpo.length<6) return Promise.reject(new Error("O código tem 6 números."));
+  return req("/auth/v1/verify",{metodo:"POST",corpo:{
+    type:"email", email:String(email||"").trim(), token:limpo
+  }}).then(function(d){
+    if(!d||!d.access_token) throw new Error("código não aceito");
+    guardarSessao(d);
+    if(d.user&&d.user.email){ sessao.email=d.user.email; guardar(K_SESSAO,sessao); }
+    return meuGrupo().catch(function(){ return null; });
+  });
+}
+
 /* o link do e-mail volta com #access_token=... */
 function processarRetorno(){
   if(!location.hash || location.hash.indexOf("access_token")<0) return false;
@@ -304,6 +323,7 @@ window.SYNC={
   email:function(){ return sessao?sessao.email:""; },
   grupo:function(){ return grupo; },
   enviarLink:enviarLink,
+  entrarComCodigo:entrarComCodigo,
   processarRetorno:processarRetorno,
   sair:sair,
   criarGrupo:criarGrupo,

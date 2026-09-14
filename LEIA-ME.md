@@ -126,8 +126,22 @@ Sem isso o link de acesso enviado por e-mail volta para o lugar errado.
 ### 3.4 Criar a família e convidar os irmãos
 
 1. No app, entre em **Adultos** (PIN inicial `1234`) → **Sincronizar entre aparelhos**.
-2. Digite seu e-mail e clique em **Receber link de acesso**. Abra o e-mail **no mesmo aparelho** e
-   clique no link. Não tem senha: é sempre assim que se entra.
+2. Digite seu e-mail e clique em **Receber o código**. Chega um e-mail com um **código de 6
+   números**; digite no app e pronto. Não tem senha.
+
+   > **Por que código e não link?** Num site estático, clicar no link do e-mail depende de uma
+   > cadeia de redirecionamentos que falha por pouco e cai num 404. O código não depende de nada
+   > disso, e ainda funciona quando você abre o e-mail no computador e o app está no tablet.
+
+   **Se no e-mail vier só um link e nenhum código**, acrescente o código ao modelo, uma vez só:
+   no Supabase vá em **Authentication → Emails**, e nos modelos **Confirm signup** e **Magic Link**
+   acrescente esta linha ao corpo:
+
+   ```html
+   <p>Ou digite este código no app: <strong>{{ .Token }}</strong></p>
+   ```
+
+   Salve. A partir daí todo e-mail traz o código.
 3. Clique em **Criar minha família** e dê um nome.
 4. Vai aparecer um **link de convite**. Toque em **Copiar o link do convite** e mande no WhatsApp
    para seus irmãos.

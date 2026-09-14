@@ -439,6 +439,56 @@ function conferir(condicao,texto){
   var anonAntiga=await alertaDeChave(jwtFalso("anon"));
   conferir(!anonAntiga.tem, "a chave anon antiga continua sendo aceita");
 
+  /* Entrar pelo código de 6 números.
+     Num site estático o link do e-mail depende de uma cadeia de
+     redirecionamentos frágil; o código não depende de nada disso. */
+  await pgS.route("**/config.js",function(rota){
+    rota.fulfill({contentType:"text/javascript",
+      body:'window.CONFIG={supabaseUrl:"https://abcdefgh.supabase.co",supabaseAnonKey:"'+chaveLonga+'"};'});
+  });
+  await pgS.route("**/auth/v1/otp",function(r){ r.fulfill({status:200,contentType:"application/json",body:"{}"}); });
+  await pgS.route("**/auth/v1/verify",function(r){
+    var corpo=JSON.parse(r.request().postData()||"{}");
+    if(corpo.token==="123456")
+      return r.fulfill({status:200,contentType:"application/json",
+        body:JSON.stringify({access_token:"tok",refresh_token:"ref",expires_in:3600,user:{email:corpo.email}})});
+    r.fulfill({status:403,contentType:"application/json",body:'{"message":"Token has expired or is invalid"}'});
+  });
+  await pgS.route("**/rest/v1/membros**",function(r){ r.fulfill({status:200,contentType:"application/json",body:"[]"}); });
+
+  await pgS.goto(base);
+  await pgS.waitForTimeout(400);
+  await abrirAdultos(pgS);
+  var campoCodigo=pgS.locator('#sync-area input[inputmode="numeric"]');
+  conferir(await campoCodigo.isHidden(), "o campo do código só aparece depois de pedir o e-mail");
+
+  await pgS.fill("#sync-email","pai@exemplo.com");
+  await pgS.locator("#sync-area button").filter({hasText:"Receber o código"}).click();
+  await pgS.waitForTimeout(700);
+  conferir(await campoCodigo.isVisible(), "depois de enviar, o campo do código aparece");
+  var botaoEntrar=pgS.locator("#sync-area button").filter({hasText:/^Entrar$/});
+  conferir(await botaoEntrar.isDisabled(), "não dá para entrar sem os 6 números");
+
+  await campoCodigo.fill("999999");
+  await pgS.waitForTimeout(200);
+  await botaoEntrar.click();
+  await pgS.waitForTimeout(700);
+  var recusa=await pgS.textContent("#sync-aviso");
+  conferir(/errado ou vencido/.test(recusa), "código errado é recusado com uma frase clara");
+  conferir(recusa.indexOf("Token has expired")<0, "a mensagem do servidor em inglês não vaza para a tela");
+
+  await campoCodigo.fill("123456");
+  await pgS.waitForTimeout(200);
+  await pgS.locator("#sync-area button").filter({hasText:/^Entrar$/}).click();
+  await pgS.waitForTimeout(900);
+  conferir(/pai@exemplo\.com/.test(await pgS.textContent("#sync-txt")),
+           "o código certo entra sem precisar do link do e-mail");
+
+  await pgS.unroute("**/auth/v1/otp");
+  await pgS.unroute("**/auth/v1/verify");
+  await pgS.unroute("**/rest/v1/membros**");
+  await pgS.unroute("**/config.js");
+
   /* convite pelo link */
   await pgS.goto(base.replace("?teste=1","?familia=A1B2-C3D4"));
   await pgS.waitForTimeout(500);

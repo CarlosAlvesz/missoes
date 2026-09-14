@@ -1830,25 +1830,69 @@ function pintarSync(){
   botaoDiagnostico(area);
   var est=SYNC.estado();
   if(est==="deslogado"){
-    txt.textContent="Entre com seu e-mail para ligar a sincronização. Você recebe um link, clica nele e pronto — não tem senha.";
+    txt.textContent="Entre com seu e-mail. Não tem senha: chega um código de 6 números por e-mail e você digita aqui.";
+
     var campo=el("div","campo");
+    campo.appendChild(el("label",null,"Seu e-mail"));
     var inp=el("input"); inp.type="email"; inp.id="sync-email"; inp.placeholder="seu@email.com"; inp.autocomplete="email";
     campo.appendChild(inp);
     area.appendChild(campo);
-    var b=el("button","btn","Receber link de acesso"); b.type="button"; b.style.setProperty("--acc","var(--voz)");
+
+    var b=el("button","btn","Receber o código"); b.type="button"; b.style.setProperty("--acc","var(--voz)");
+    area.appendChild(b);
+
+    /* o campo do código só aparece depois de o e-mail sair */
+    var campoCod=el("div","campo"); campoCod.style.marginTop="16px"; campoCod.hidden=true;
+    campoCod.appendChild(el("label",null,"Código que chegou no e-mail"));
+    var cod=el("input"); cod.type="text"; cod.inputMode="numeric"; cod.maxLength=6;
+    cod.placeholder="000000"; cod.autocomplete="one-time-code";
+    cod.style.fontFamily="var(--num)"; cod.style.fontSize="1.5rem"; cod.style.letterSpacing=".25em";
+    campoCod.appendChild(cod);
+    var bEntrar=el("button","btn","Entrar"); bEntrar.type="button"; bEntrar.style.setProperty("--acc","var(--voz)");
+    bEntrar.disabled=true;
+    campoCod.appendChild(bEntrar);
+    campoCod.appendChild(el("p","dica","Se no e-mail só veio um link e nenhum código, o LEIA-ME explica como acrescentar o código ao modelo de e-mail no Supabase — leva um minuto e resolve de vez."));
+    area.appendChild(campoCod);
+
+    cod.addEventListener("input",function(){
+      this.value=this.value.replace(/\D/g,"").slice(0,6);
+      bEntrar.disabled=this.value.length<6;
+    });
+    cod.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!bEntrar.disabled) bEntrar.click(); });
+
     b.addEventListener("click",function(){
       var e=inp.value.trim();
       if(!e){ inp.focus(); return; }
-      b.disabled=true; $("sync-aviso").textContent="Enviando...";
+      b.disabled=true;
+      $("sync-aviso").textContent="Enviando...";
+      $("sync-aviso").style.color="var(--ink-soft)";
       SYNC.enviarLink(e).then(function(){
-        $("sync-aviso").textContent="Link enviado para "+e+". Abra o e-mail neste aparelho e clique no link.";
+        campoCod.hidden=false;
+        cod.focus();
+        b.textContent="Enviar de novo";
+        $("sync-aviso").textContent="E-mail enviado para "+e+". Digite aqui o código de 6 números. (O link do e-mail também funciona, se preferir.)";
         $("sync-aviso").style.color="var(--ok)";
       }).catch(function(err){
         $("sync-aviso").textContent="Não deu certo: "+err.message;
         $("sync-aviso").style.color="var(--quase)";
       }).then(function(){ b.disabled=false; });
     });
-    area.appendChild(b);
+
+    bEntrar.addEventListener("click",function(){
+      bEntrar.disabled=true;
+      $("sync-aviso").textContent="Conferindo o código...";
+      $("sync-aviso").style.color="var(--ink-soft)";
+      SYNC.entrarComCodigo(inp.value.trim(),cod.value).then(function(){
+        pintarPais();
+        sincronizarAgora();
+      }).catch(function(err){
+        $("sync-aviso").textContent = /expired|invalid|não aceito|code/i.test(err.message||"")
+          ? "Código errado ou vencido. Peça um novo em “Enviar de novo”."
+          : ("Não consegui entrar: "+err.message);
+        $("sync-aviso").style.color="var(--quase)";
+        bEntrar.disabled=false;
+      });
+    });
     return;
   }
   if(est==="sem-grupo"){
