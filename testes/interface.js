@@ -312,6 +312,75 @@ function conferir(condicao,texto){
   conferir(await pg.locator("#relatorio img, #sync-txt img, .relato img").count()===0,
            "nome digitado com HTML aparece como texto, não vira marcação");
 
+  /* ---------- sincronização: convite e diagnóstico ---------- */
+  console.log("\nSincronização");
+  /* o service worker serve o config.js do cache, então aqui ele fica bloqueado */
+  var ctxS=await navegador.newContext({viewport:{width:420,height:1000},serviceWorkers:"block"});
+  var pgS=await ctxS.newPage();
+  var errosS=[];
+  pgS.on("pageerror",function(e){ errosS.push(e.message); });
+
+  async function abrirAdultos(pagina){
+    await pagina.click("#btn-pais");
+    await pagina.fill("#pin-in","1234"); await pagina.click("#pin-ok");
+    await pagina.waitForTimeout(400);
+  }
+  async function comConfig(url,chave){
+    await pgS.route("**/config.js",function(rota){
+      rota.fulfill({contentType:"text/javascript",
+        body:'window.CONFIG={supabaseUrl:"'+url+'",supabaseAnonKey:"'+chave+'"};'});
+    });
+    await pgS.goto(base);
+    await pgS.waitForTimeout(400);
+    await abrirAdultos(pgS);
+    await pgS.locator("#sync-area button").filter({hasText:"Testar a conexão"}).click();
+    await pgS.waitForTimeout(900);
+    return pgS.textContent("#sync-aviso");
+  }
+
+  /* sem configuração o app não pode parecer quebrado */
+  await pgS.goto(base);
+  await pgS.waitForTimeout(400);
+  await pgS.fill("#cr-nome","Téo"); await pgS.click("#cr-salvar");
+  await pgS.waitForTimeout(300);
+  await abrirAdultos(pgS);
+  var semCfg=await pgS.textContent("#sync-txt");
+  conferir(/funciona normalmente/.test(semCfg), "sem config.js o app diz que funciona normalmente, não que está quebrado");
+  conferir(await pgS.locator("#sync-area button").filter({hasText:"Testar"}).count()===0,
+           "sem config.js não oferece testar conexão");
+
+  var chaveLonga=new Array(61).join("x");
+  var d1=await comConfig("abc",chaveLonga);
+  conferir(/endereço/i.test(d1) && /supabase\.co/.test(d1),
+           "endereço malformado é explicado em português: "+JSON.stringify(d1.slice(0,60)));
+  var d2=await comConfig("https://abcdefgh.supabase.co","curta");
+  conferir(/chave/i.test(d2) && /anon/i.test(d2),
+           "chave curta é explicada e diz onde achar a certa");
+  var d3=await comConfig("https://naoexiste123456789.supabase.co",chaveLonga);
+  conferir(/pausado|internet|banco/i.test(d3),
+           "projeto inalcançável dá uma explicação com o que verificar");
+  conferir(d3.indexOf("undefined")<0 && !/^[A-Za-z]*Error/.test(d3),
+           "o diagnóstico nunca mostra erro técnico cru");
+
+  /* convite pelo link */
+  await pgS.unroute("**/config.js");
+  await pgS.goto(base.replace("?teste=1","?familia=A1B2-C3D4"));
+  await pgS.waitForTimeout(500);
+  conferir(await pgS.evaluate(function(){ return window.SYNC.conviteGuardado(); })==="A1B2-C3D4",
+           "o código da família vem no link e fica guardado");
+  conferir(!(await pgS.evaluate(function(){ return location.search.indexOf("familia")>=0; })),
+           "o código sai da barra de endereço depois de lido");
+
+  await pgS.evaluate(function(){ localStorage.removeItem("missoes.convite.v1"); });
+  await pgS.goto(base.replace("?teste=1","?familia=%3Cscript%3Ealert(1)%3C/script%3E"));
+  await pgS.waitForTimeout(400);
+  conferir(await pgS.evaluate(function(){ return window.SYNC.conviteGuardado(); })==="",
+           "um convite com lixo na URL é recusado");
+
+  conferir(errosS.length===0, "nenhum erro de JavaScript na sincronização");
+  if(errosS.length) errosS.forEach(function(e){ console.log("      "+e); });
+  await ctxS.close();
+
   /* ---------- gráfico de evolução ---------- */
   console.log("\nGráfico de evolução no painel");
   var ctxG=await navegador.newContext({viewport:{width:900,height:1400}});

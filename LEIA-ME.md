@@ -64,14 +64,19 @@ Depois de instalado, ele abre em tela cheia, com o ícone do foguete, sem barra 
 ## 3. Ligar a sincronização entre aparelhos
 
 Sem este passo o app já funciona: cada aparelho guarda o seu próprio histórico.
-Ative a sincronização para que as quatro crianças e os pais vejam tudo em qualquer aparelho.
+Ligue a sincronização para que **as crianças da família inteira — filhos, sobrinhos — apareçam
+juntas**, em qualquer aparelho, e para que a seção *A turma* mostre os primos.
 
-### 3.1 Criar o banco
+**Quem faz este capítulo é você, uma vez só.** Seus irmãos não precisam criar conta nenhuma no
+Supabase, nem instalar nada: eles vão receber um link e pronto.
+
+### 3.1 Criar o banco (você, uma vez)
 
 1. Crie uma conta gratuita em [supabase.com](https://supabase.com) e clique em **New project**.
    Escolha a região *South America (São Paulo)* e guarde a senha do banco.
 2. Com o projeto criado, abra **SQL Editor → New query**, cole o conteúdo inteiro do arquivo
    `schema.sql` desta pasta e clique em **Run**. Deve aparecer *Success*.
+   Pode rodar de novo quando quiser: o arquivo é feito para isso.
 3. Vá em **Project Settings → API** e copie os dois valores:
    - **Project URL** (algo como `https://abcdefgh.supabase.co`)
    - **anon public** (uma chave longa)
@@ -90,7 +95,12 @@ window.CONFIG = {
 Salve e publique de novo (`git add -A && git commit -m "config" && git push`).
 
 Estes dois valores podem ficar públicos no GitHub. Quem controla o acesso são as regras
-de segurança que o `schema.sql` criou: cada pessoa só enxerga os dados da própria família.
+de segurança que o `schema.sql` criou: **cada família só enxerga os dados da própria família**,
+mesmo estando todas no mesmo banco.
+
+> **Deu errado?** Em **Adultos → Sincronizar** há um botão **Testar a conexão**. Ele diz em
+> português o que está faltando — endereço torto, chave incompleta, tabelas não criadas ou
+> projeto pausado.
 
 ### 3.3 Liberar o endereço do app no Supabase
 
@@ -101,21 +111,28 @@ Em **Authentication → URL Configuration**:
 
 Sem isso o link de acesso enviado por e-mail volta para o lugar errado.
 
-### 3.4 Criar a família e convidar os outros pais
+### 3.4 Criar a família e convidar os irmãos
 
 1. No app, entre em **Adultos** (PIN inicial `1234`) → **Sincronizar entre aparelhos**.
-2. Digite seu e-mail e clique em **Receber link de acesso**. Abra o e-mail **no mesmo aparelho** e clique no link.
+2. Digite seu e-mail e clique em **Receber link de acesso**. Abra o e-mail **no mesmo aparelho** e
+   clique no link. Não tem senha: é sempre assim que se entra.
 3. Clique em **Criar minha família** e dê um nome.
-4. Vai aparecer um **código** tipo `A1B2-C3D4`. Passe esse código para seus irmãos.
-5. Cada um deles abre o app, entra com o próprio e-mail e usa **Entrar na família** com o código.
+4. Vai aparecer um **link de convite**. Toque em **Copiar o link do convite** e mande no WhatsApp
+   para seus irmãos.
 
-Pronto: todos os aparelhos passam a ver as mesmas crianças e o mesmo histórico.
-As avaliações registram quem avaliou.
+**O que o seu irmão faz:** abre o link, entra em Adultos, digita o e-mail dele, clica no link que
+chega por e-mail, e toca em **Entrar nesta família**. O código já vem preenchido pelo link — ele não
+digita código nenhum.
+
+Pronto: todos os aparelhos passam a ver as mesmas crianças e o mesmo histórico, e cada avaliação
+fica registrada com o e-mail de quem avaliou.
 
 > O plano gratuito do Supabase pausa projetos sem uso por uma semana. Se isso acontecer,
-> basta entrar no painel e reativar — nenhum dado é perdido.
+> basta entrar no painel e reativar — nenhum dado é perdido. Com a família usando o app, isso
+> praticamente não acontece.
 
----
+> **O áudio das leituras não é sincronizado.** Ele fica só no aparelho onde foi gravado. É voz de
+> criança, e mandar isso para um servidor seria uma decisão de outra natureza.
 
 ## 4. Como funciona no dia a dia
 

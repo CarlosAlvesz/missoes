@@ -250,13 +250,23 @@ function sincronizarAgora(){
     var a=$("sync-aviso"); if(a&&!$("tela-pais").hidden){ a.textContent="Não consegui sincronizar agora: "+e.message; a.style.color="var(--quase)"; }
   }).then(function(){ sincronizando=false; });
 }
+/* Campos que existem só neste aparelho e não trafegam na sincronização.
+   Sem isto, uma volta ao servidor apagaria a marca da gravação e o áudio
+   ficaria órfão no IndexedDB, sem nada apontando para ele. */
+var SO_LOCAL=["temAudio","recentes","revisao","revisoesFeitas","escudos","escudosGanhos","escudoUsado","meta"];
+
 function juntar(remoto){
   ["perfis","sessoes"].forEach(function(chave){
     var mapa={};
     dados[chave].forEach(function(x){ mapa[x.id]=x; });
     (remoto[chave]||[]).forEach(function(r){
       var atual=mapa[r.id];
-      if(!atual || (r.atualizado||0) > (atual.atualizado||0)) mapa[r.id]=r;
+      if(!atual || (r.atualizado||0) > (atual.atualizado||0)){
+        if(atual) SO_LOCAL.forEach(function(k){
+          if(atual[k]!==undefined && r[k]===undefined) r[k]=atual[k];
+        });
+        mapa[r.id]=r;
+      }
     });
     dados[chave]=Object.keys(mapa).map(function(k){return mapa[k];});
   });
@@ -1806,9 +1816,10 @@ function pintarSync(){
   var txt=$("sync-txt"), area=$("sync-area");
   area.innerHTML=""; $("sync-aviso").textContent="";
   if(!window.SYNC || !SYNC.configurado){
-    txt.textContent="Sincronização não configurada. Tudo funciona normalmente, mas os dados ficam só neste aparelho. O arquivo LEIA-ME explica como ligar a sincronização entre celular e computador.";
+    txt.textContent="Sincronização não configurada. Tudo funciona normalmente, mas os dados ficam só neste aparelho. O arquivo LEIA-ME explica, passo a passo, como ligar a sincronização entre os aparelhos da família.";
     return;
   }
+  botaoDiagnostico(area);
   var est=SYNC.estado();
   if(est==="deslogado"){
     txt.textContent="Entre com seu e-mail para ligar a sincronização. Você recebe um link, clica nele e pronto — não tem senha.";
@@ -1833,6 +1844,38 @@ function pintarSync(){
     return;
   }
   if(est==="sem-grupo"){
+    var convite=SYNC.conviteGuardado?SYNC.conviteGuardado():"";
+    txt.textContent="Você entrou como "+SYNC.email()+".";
+
+    /* quem chegou por um link de convite não deveria ter de digitar nada */
+    if(convite){
+      var cxC=el("div","caixa"); cxC.style.marginTop="0";
+      cxC.appendChild(el("h4",null,"Você foi convidado"));
+      cxC.appendChild(frase("O link que você abriu é da família ",neg(convite),
+        ". Toque abaixo para entrar nela e passar a ver as mesmas crianças."));
+      var bC=el("button","btn","Entrar nesta família"); bC.type="button";
+      bC.style.setProperty("--acc","var(--voz)");
+      bC.addEventListener("click",function(){
+        bC.disabled=true;
+        $("sync-aviso").textContent="Entrando...";
+        SYNC.entrarGrupo(convite).then(function(){
+          SYNC.esquecerConvite();
+          pintarPais(); sincronizarAgora();
+        }).catch(function(){
+          $("sync-aviso").textContent="Esse convite não vale mais. Peça o código para quem te chamou.";
+          $("sync-aviso").style.color="var(--quase)";
+          bC.disabled=false;
+        });
+      });
+      cxC.appendChild(bC);
+      var bIgnorar=el("button","chip mini","Não era isso, quero criar a minha"); bIgnorar.type="button";
+      bIgnorar.style.marginTop="10px";
+      bIgnorar.addEventListener("click",function(){ SYNC.esquecerConvite(); pintarSync(); });
+      cxC.appendChild(bIgnorar);
+      area.appendChild(cxC);
+      return;
+    }
+
     txt.textContent="Você entrou como "+SYNC.email()+". Agora crie a família ou entre na de alguém com o código.";
     var c1=el("div","campo");
     var i1=el("input"); i1.type="text"; i1.placeholder="Nome da família (ex.: Alves)";
@@ -1862,10 +1905,26 @@ function pintarSync(){
   txt.appendChild(frase("Sincronizando como ",neg(SYNC.email())," na família ",neg(g?g.nome:""),
     ". Tudo o que as crianças fizerem aparece nos outros aparelhos."));
   var cod=el("div","caixa"); cod.style.marginTop="0";
-  cod.appendChild(el("h4",null,"Código para convidar"));
-  cod.appendChild(el("p",null,"Passe este código para os outros pais entrarem na mesma família:"));
+  cod.appendChild(el("h4",null,"Convidar o resto da família"));
+  cod.appendChild(el("p",null,"Mande este link para os outros pais. Quem abrir já entra na família certa, sem precisar digitar código nenhum — basta entrar com o próprio e-mail."));
+
+  var link=SYNC.linkDeConvite?SYNC.linkDeConvite():"";
+  if(link){
+    var cxLink=el("div","convite");
+    cxLink.appendChild(el("code",null,link));
+    cod.appendChild(cxLink);
+    var bl=el("button","btn","Copiar o link do convite"); bl.type="button";
+    bl.style.setProperty("--acc","var(--voz)");
+    bl.addEventListener("click",function(){ copiar(link,bl,"Copiar o link do convite"); });
+    cod.appendChild(bl);
+  }
+
+  cod.appendChild(el("p","dica","Se preferir passar só o código, é este:"));
   var codigo=el("div","contas"); codigo.style.fontSize="1.6rem"; codigo.textContent=g?g.codigo:"";
   cod.appendChild(codigo);
+  var bc=el("button","chip","Copiar o código"); bc.type="button";
+  bc.addEventListener("click",function(){ copiar(g?g.codigo:"",bc,"Copiar o código"); });
+  cod.appendChild(bc);
   area.appendChild(cod);
   var linha=el("div","acoes"); linha.style.marginTop="12px";
   var bs=el("button","chip","Sincronizar agora"); bs.type="button";
@@ -1878,6 +1937,51 @@ function pintarSync(){
   bo.addEventListener("click",function(){ SYNC.sair(); pintarPais(); });
   linha.appendChild(bo);
   area.appendChild(linha);
+}
+
+/* Quando a sincronização não funciona, quem vai resolver não é programador:
+   precisa de uma frase que diga o que fazer, não de um código de erro. */
+function botaoDiagnostico(area){
+  if(!SYNC.diagnosticar) return;
+  var linha=el("div","acoes"); linha.style.marginBottom="12px";
+  var b=el("button","chip","Testar a conexão"); b.type="button";
+  b.addEventListener("click",function(){
+    b.disabled=true;
+    var av=$("sync-aviso");
+    av.textContent="Testando..."; av.style.color="var(--ink-soft)";
+    SYNC.diagnosticar().then(function(r){
+      av.textContent=r.texto;
+      av.style.color = r.ok ? "var(--ok)" : "var(--quase)";
+      b.disabled=false;
+    });
+  });
+  linha.appendChild(b);
+  area.appendChild(linha);
+}
+
+/* ---------- copiar para a área de transferência ---------- */
+function copiar(texto,botao,rotuloOriginal){
+  function feito(){
+    botao.textContent="Copiado ✓";
+    setTimeout(function(){ botao.textContent=rotuloOriginal; },2200);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto).then(feito).catch(function(){ manual(); });
+  } else manual();
+
+  function manual(){
+    /* navegador antigo ou sem permissão: seleciona para a pessoa copiar à mão */
+    var campo=document.createElement("textarea");
+    campo.value=texto;
+    campo.style.position="fixed"; campo.style.opacity="0";
+    document.body.appendChild(campo);
+    campo.select();
+    var deu=false;
+    try{ deu=document.execCommand("copy"); }catch(e){}
+    campo.remove();
+    if(deu) feito();
+    else { botao.textContent="Copie à mão: "+texto; }
+  }
 }
 
 /* ---------- arquivo ---------- */
@@ -2084,6 +2188,7 @@ $("limpar").addEventListener("click",function(){
    ========================================================= */
 carregar();
 pintarBotaoSom();
+if(window.SYNC && SYNC.guardarConviteDaURL) SYNC.guardarConviteDaURL();
 if(window.SYNC){
   SYNC.aoMudar(function(){ if(!$("tela-pais").hidden) pintarSync(); });
   var voltou=SYNC.processarRetorno();

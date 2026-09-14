@@ -611,3 +611,12 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 .evolucao path[fill]{transition:opacity .12s ease}
 .evolucao path[fill]:hover{opacity:.82;cursor:default}
 .evolucao-nota{font-size:.8rem;color:var(--ink-faint);margin-top:7px;line-height:1.45}
+
+/* ---------- link de convite ---------- */
+.convite{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;margin:10px 0;overflow-x:auto;
+}
+.convite code{
+  font-family:var(--num);font-size:.82rem;color:var(--ink-soft);white-space:nowrap;
+}

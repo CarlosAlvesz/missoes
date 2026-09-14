@@ -59,6 +59,11 @@ create table if not exists public.sessoes (
   avaliador   text default '',
   atualizado  bigint not null default 0
 );
+-- colunas acrescentadas depois; rodar de novo não faz mal
+alter table public.sessoes add column if not exists treino   text    default '';
+alter table public.sessoes add column if not exists removido boolean default false;
+alter table public.perfis  add column if not exists meta     integer default 2;
+
 create index if not exists sessoes_grupo_idx on public.sessoes(grupo_id);
 create index if not exists sessoes_perfil_idx on public.sessoes(perfil_id);
 

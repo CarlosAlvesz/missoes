@@ -176,30 +176,88 @@ function sincronizar(local){
 /* ---------- conversão entre o formato local e as colunas ---------- */
 function limparPerfil(p){
   return {id:p.id,nome:p.nome||"",avatar:p.avatar||"🚀",letra:p.letra||"bastao",
-          niveis:p.niveis||{},estrelas:p.estrelas||0,removido:!!p.removido,atualizado:p.atualizado||Date.now()};
+          niveis:p.niveis||{},estrelas:p.estrelas||0,meta:p.meta||2,
+          removido:!!p.removido,atualizado:p.atualizado||Date.now()};
 }
 function dePerfil(r){
   return {id:r.id,nome:r.nome||"",avatar:r.avatar||"🚀",letra:r.letra||"bastao",
-          niveis:r.niveis||{},estrelas:r.estrelas||0,removido:!!r.removido,atualizado:Number(r.atualizado)||0};
+          niveis:r.niveis||{},estrelas:r.estrelas||0,meta:r.meta||2,
+          removido:!!r.removido,atualizado:Number(r.atualizado)||0};
 }
 function limparSessao(s){
-  return {id:s.id,perfil_id:s.perfil,ts:s.ts,dia:s.dia,area:s.area,tipo:s.tipo||"quiz",
+  return {id:s.id,perfil_id:s.perfil,ts:s.ts,dia:s.dia,area:s.area,tipo:s.tipo||"quiz",treino:s.treino||"",
           acertos:s.acertos||0,total:s.total||0,seg:s.seg||0,estrelas:s.estrelas||0,
           tags:s.tags||{},texto:s.texto||"",nivel:s.nivel||1,
           autonomia:s.autonomia==null?null:s.autonomia,foco:s.foco==null?null:s.foco,
           fluencia:s.fluencia==null?null:s.fluencia,obs:s.obs||"",avaliador:s.avaliador||"",
+          removido:!!s.removido,
           atualizado:s.atualizado||s.ts||Date.now()};
 }
 function deSessao(r){
-  return {id:r.id,perfil:r.perfil_id,ts:Number(r.ts)||0,dia:r.dia,area:r.area,tipo:r.tipo||"quiz",
+  return {id:r.id,perfil:r.perfil_id,ts:Number(r.ts)||0,dia:r.dia,area:r.area,tipo:r.tipo||"quiz",treino:r.treino||"",
           acertos:r.acertos||0,total:r.total||0,seg:r.seg||0,estrelas:r.estrelas||0,
           tags:r.tags||{},texto:r.texto||"",nivel:r.nivel||1,
           autonomia:r.autonomia,foco:r.foco,fluencia:r.fluencia,obs:r.obs||"",avaliador:r.avaliador||"",
+          removido:!!r.removido,
           atualizado:Number(r.atualizado)||0};
+}
+
+/* ---------- convite ----------
+   Passar um código por telefone dá erro de digitação e confusão sobre onde
+   colar. Um link resolve: quem recebe abre e o código já vem junto. */
+var K_CONVITE="missoes.convite.v1";
+
+function linkDeConvite(){
+  if(!grupo||!grupo.codigo) return "";
+  return location.origin+location.pathname+"?familia="+encodeURIComponent(grupo.codigo);
+}
+
+/* guarda o código que veio no link, para usar depois que a pessoa entrar */
+function guardarConviteDaURL(){
+  var m=/[?&]familia=([^&#]+)/.exec(location.search);
+  if(!m) return "";
+  var codigo=decodeURIComponent(m[1]).trim().toUpperCase();
+  if(!/^[A-Z0-9-]{4,20}$/.test(codigo)) return "";
+  guardar(K_CONVITE,codigo);
+  try{ history.replaceState(null,"",location.pathname+location.hash); }catch(e){}
+  return codigo;
+}
+function conviteGuardado(){ return ler(K_CONVITE)||""; }
+function esquecerConvite(){ limpar(K_CONVITE); }
+
+/* ---------- diagnóstico em português ----------
+   Quando a sincronização não funciona, o dono do app não é programador:
+   precisa de uma frase que diga o que fazer, não de um código de erro. */
+function diagnosticar(){
+  if(!CONFIGURADO)
+    return Promise.resolve({ok:false,texto:"O arquivo config.js está vazio. Sem ele o app funciona normalmente, só não sincroniza. O LEIA-ME explica o que colar ali."});
+  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(URL_BASE))
+    return Promise.resolve({ok:false,texto:"O endereço em config.js não parece um projeto do Supabase. Ele tem de ser algo como https://abcdefgh.supabase.co, sem barra no fim."});
+  if(CHAVE.length<40)
+    return Promise.resolve({ok:false,texto:"A chave em config.js parece curta demais. Copie a chave 'anon public' inteira, em Project Settings → API."});
+
+  return fetch(URL_BASE+"/rest/v1/grupos?select=id&limit=1",{headers:{apikey:CHAVE}})
+    .then(function(r){
+      if(r.status===401||r.status===403)
+        return {ok:true,texto:"Conexão com o banco funcionando. Agora entre com o seu e-mail para ligar a sincronização."};
+      if(r.ok)
+        return {ok:true,texto:"Conexão com o banco funcionando."};
+      if(r.status===404)
+        return {ok:false,texto:"O banco respondeu, mas as tabelas não existem. Falta rodar o schema.sql no SQL Editor do Supabase."};
+      return {ok:false,texto:"O banco respondeu com erro "+r.status+". Confira se o projeto no Supabase não está pausado."};
+    })
+    .catch(function(){
+      return {ok:false,texto:"Não consegui falar com o banco. Pode ser falta de internet, endereço errado em config.js, ou o projeto pausado no Supabase (o plano gratuito pausa depois de uma semana sem uso)."};
+    });
 }
 
 window.SYNC={
   configurado:CONFIGURADO,
+  linkDeConvite:linkDeConvite,
+  guardarConviteDaURL:guardarConviteDaURL,
+  conviteGuardado:conviteGuardado,
+  esquecerConvite:esquecerConvite,
+  diagnosticar:diagnosticar,
   estado:estado,
   aoMudar:function(fn){ ouvinte=fn; },
   email:function(){ return sessao?sessao.email:""; },
