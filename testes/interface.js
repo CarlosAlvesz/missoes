@@ -338,7 +338,13 @@ function conferir(condicao,texto){
     return pgS.textContent("#sync-aviso");
   }
 
-  /* sem configuração o app não pode parecer quebrado */
+  /* Sem configuração o app não pode parecer quebrado.
+     O config.js de verdade pode já estar preenchido, então aqui ele é
+     simulado vazio em vez de se contar com o arquivo do repositório. */
+  await pgS.route("**/config.js",function(rota){
+    rota.fulfill({contentType:"text/javascript",
+      body:'window.CONFIG={supabaseUrl:"",supabaseAnonKey:""};'});
+  });
   await pgS.goto(base);
   await pgS.waitForTimeout(400);
   await pgS.fill("#cr-nome","Téo"); await pgS.click("#cr-salvar");
@@ -348,6 +354,7 @@ function conferir(condicao,texto){
   conferir(/funciona normalmente/.test(semCfg), "sem config.js o app diz que funciona normalmente, não que está quebrado");
   conferir(await pgS.locator("#sync-area button").filter({hasText:"Testar"}).count()===0,
            "sem config.js não oferece testar conexão");
+  await pgS.unroute("**/config.js");
 
   /* formato realista de chave publicável: o app recusa qualquer outro */
   var chaveLonga="sb_publishable_"+new Array(33).join("a");
@@ -411,7 +418,6 @@ function conferir(condicao,texto){
   conferir(!anonAntiga.tem, "a chave anon antiga continua sendo aceita");
 
   /* convite pelo link */
-  await pgS.unroute("**/config.js");
   await pgS.goto(base.replace("?teste=1","?familia=A1B2-C3D4"));
   await pgS.waitForTimeout(500);
   conferir(await pgS.evaluate(function(){ return window.SYNC.conviteGuardado(); })==="A1B2-C3D4",

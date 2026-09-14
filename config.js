@@ -6,10 +6,13 @@
 
    Para sincronizar celular e computador, siga o LEIA-ME.md
    e cole aqui os dois valores do seu projeto no Supabase.
-   Estes valores podem ficar públicos: quem manda no acesso
-   são as regras do banco, não estes campos.
+
+   Estes dois valores podem ficar públicos: quem manda no acesso
+   são as regras do banco (schema.sql), não estes campos. A chave
+   aqui é a PUBLICÁVEL (sb_publishable_...). A chave secreta
+   (sb_secret_...) nunca pode vir para cá: este arquivo é público.
    ========================================================= */
 window.CONFIG = {
-  supabaseUrl: "",
-  supabaseAnonKey: ""
+  supabaseUrl: "https://ewppmgwyinybksmoshtd.supabase.co",
+  supabaseAnonKey: "sb_publishable_yH47OHZaiN-xVTMFoX_Pyg_68mo9xL2"
 };
