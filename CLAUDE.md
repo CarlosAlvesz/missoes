@@ -27,6 +27,9 @@ Os dois rodam no GitHub Actions a cada push. **Não considere um trabalho pronto
   sem isso.
 - **Ao mexer em qualquer arquivo servido, suba o `CACHE` em `sw.js`** (`missoes-v3` → `missoes-v4`),
   senão quem já instalou continua com a versão velha.
+- **A chave do `config.js` é pública de propósito** — quem protege os dados são as regras do banco
+  (`schema.sql`). Mas a chave **secreta** (`sb_secret_…` / `service_role`) nunca pode ir ali:
+  `SYNC.chavePerigosa()` detecta as duas formas e o painel avisa em vermelho.
 - **Sem anúncio, sem rastreamento, sem rede obrigatória.** O app tem de funcionar inteiro offline.
 - **Nada de arquivo de áudio.** Som e música são gerados por Web Audio. Um mp3 pesaria no cache
   offline e traria questão de licença na publicação.

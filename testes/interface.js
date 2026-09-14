@@ -349,18 +349,49 @@ function conferir(condicao,texto){
   conferir(await pgS.locator("#sync-area button").filter({hasText:"Testar"}).count()===0,
            "sem config.js não oferece testar conexão");
 
-  var chaveLonga=new Array(61).join("x");
+  /* formato realista de chave publicável: o app recusa qualquer outro */
+  var chaveLonga="sb_publishable_"+new Array(33).join("a");
   var d1=await comConfig("abc",chaveLonga);
   conferir(/endereço/i.test(d1) && /supabase\.co/.test(d1),
            "endereço malformado é explicado em português: "+JSON.stringify(d1.slice(0,60)));
   var d2=await comConfig("https://abcdefgh.supabase.co","curta");
-  conferir(/chave/i.test(d2) && /anon/i.test(d2),
-           "chave curta é explicada e diz onde achar a certa");
+  conferir(/chave/i.test(d2) && /sb_publishable_/.test(d2),
+           "chave que não é do Supabase é explicada, com o formato certo");
   var d3=await comConfig("https://naoexiste123456789.supabase.co",chaveLonga);
   conferir(/pausado|internet|banco/i.test(d3),
            "projeto inalcançável dá uma explicação com o que verificar");
   conferir(d3.indexOf("undefined")<0 && !/^[A-Za-z]*Error/.test(d3),
            "o diagnóstico nunca mostra erro técnico cru");
+
+  /* colar a chave secreta num arquivo público abriria o banco inteiro */
+  function jwtFalso(papel){
+    function b64(o){ return Buffer.from(JSON.stringify(o)).toString("base64url"); }
+    return b64({alg:"HS256",typ:"JWT"})+"."+b64({iss:"supabase",role:papel})+".assinatura";
+  }
+  async function alertaDeChave(chave){
+    await pgS.route("**/config.js",function(rota){
+      rota.fulfill({contentType:"text/javascript",
+        body:'window.CONFIG={supabaseUrl:"https://abcdefgh.supabase.co",supabaseAnonKey:"'+chave+'"};'});
+    });
+    await pgS.goto(base);
+    await pgS.waitForTimeout(400);
+    await abrirAdultos(pgS);
+    var tem=await pgS.locator(".perigo").count()>0;
+    var texto=tem?await pgS.textContent(".perigo"):"";
+    await pgS.unroute("**/config.js");
+    return {tem:tem,texto:texto};
+  }
+
+  var secretaNova=await alertaDeChave("sb_secret_AbCdEf123456");
+  conferir(secretaNova.tem && /NÃO pode ficar/.test(secretaNova.texto),
+           "a chave secreta nova (sb_secret_) dispara alerta sem precisar clicar em nada");
+  var servico=await alertaDeChave(jwtFalso("service_role"));
+  conferir(servico.tem && /service_role/.test(servico.texto),
+           "a chave service_role antiga também é reconhecida e recusada");
+  var publicavel=await alertaDeChave("sb_publishable_AbCdEf1234567890");
+  conferir(!publicavel.tem, "a chave publicável correta não dispara alerta");
+  var anonAntiga=await alertaDeChave(jwtFalso("anon"));
+  conferir(!anonAntiga.tem, "a chave anon antiga continua sendo aceita");
 
   /* convite pelo link */
   await pgS.unroute("**/config.js");

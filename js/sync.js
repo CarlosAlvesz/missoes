@@ -228,13 +228,41 @@ function esquecerConvite(){ limpar(K_CONVITE); }
 /* ---------- diagnóstico em português ----------
    Quando a sincronização não funciona, o dono do app não é programador:
    precisa de uma frase que diga o que fazer, não de um código de erro. */
+/* A chave que vai no config.js é pública de propósito — quem protege os
+   dados são as regras do banco. Mas existe uma chave SECRETA de nome
+   parecido, e colá-la aqui abriria o banco inteiro para qualquer pessoa,
+   já que este arquivo fica público no GitHub. Vale conferir. */
+function chavePerigosa(k){
+  k=String(k||"");
+  if(/^sb_secret_/.test(k))
+    return "Esta é a chave SECRETA (sb_secret_...). Ela NÃO pode ficar aqui: este arquivo é público e ela dá acesso total ao banco. Volte no Supabase e copie a chave publicável (sb_publishable_...). Se já publicou a secreta, apague-a e gere outra no Supabase.";
+  if(/^eyJ/.test(k)){
+    try{
+      var meio=k.split(".")[1];
+      if(meio){
+        var texto=atob(meio.replace(/-/g,"+").replace(/_/g,"/"));
+        if(/"role"\s*:\s*"service_role"/.test(texto))
+          return "Esta é a chave service_role, que dá acesso total ao banco e NÃO pode ficar num arquivo público. Copie a chave anon / publicável no lugar dela, e gere uma chave nova no Supabase se esta já foi publicada.";
+      }
+    }catch(e){}
+  }
+  return "";
+}
+
+function chaveParecePlausivel(k){
+  k=String(k||"");
+  return /^sb_publishable_/.test(k) || (/^eyJ/.test(k) && k.split(".").length===3);
+}
+
 function diagnosticar(){
   if(!CONFIGURADO)
     return Promise.resolve({ok:false,texto:"O arquivo config.js está vazio. Sem ele o app funciona normalmente, só não sincroniza. O LEIA-ME explica o que colar ali."});
   if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(URL_BASE))
     return Promise.resolve({ok:false,texto:"O endereço em config.js não parece um projeto do Supabase. Ele tem de ser algo como https://abcdefgh.supabase.co, sem barra no fim."});
-  if(CHAVE.length<40)
-    return Promise.resolve({ok:false,texto:"A chave em config.js parece curta demais. Copie a chave 'anon public' inteira, em Project Settings → API."});
+  var perigo=chavePerigosa(CHAVE);
+  if(perigo) return Promise.resolve({ok:false,perigo:true,texto:perigo});
+  if(!chaveParecePlausivel(CHAVE))
+    return Promise.resolve({ok:false,texto:"A chave em config.js não parece uma chave do Supabase. Ela começa com sb_publishable_ (nos projetos novos) ou com eyJ (nos antigos, a chave anon). Copie a chave inteira em Settings → API Keys."});
 
   return fetch(URL_BASE+"/rest/v1/grupos?select=id&limit=1",{headers:{apikey:CHAVE}})
     .then(function(r){
@@ -254,6 +282,7 @@ function diagnosticar(){
 window.SYNC={
   configurado:CONFIGURADO,
   linkDeConvite:linkDeConvite,
+  chavePerigosa:function(){ return chavePerigosa(CHAVE); },
   guardarConviteDaURL:guardarConviteDaURL,
   conviteGuardado:conviteGuardado,
   esquecerConvite:esquecerConvite,

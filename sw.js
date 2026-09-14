@@ -1,5 +1,5 @@
 /* Service worker: deixa o app abrir sem internet. */
-var CACHE = "missoes-v9";
+var CACHE = "missoes-v10";
 var ARQUIVOS = [
   "./",
   "./index.html",

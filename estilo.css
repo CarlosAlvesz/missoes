@@ -620,3 +620,11 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px soli
 .convite code{
   font-family:var(--num);font-size:.82rem;color:var(--ink-soft);white-space:nowrap;
 }
+
+/* aviso urgente: chave errada no config.js */
+.perigo{
+  display:flex;flex-direction:column;gap:6px;
+  background:var(--quase);color:#fff;border-radius:12px;padding:12px 14px;margin-bottom:12px;
+  font-size:.92rem;line-height:1.45;
+}
+.perigo b{font-size:1rem}

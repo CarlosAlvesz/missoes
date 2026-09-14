@@ -77,9 +77,17 @@ Supabase, nem instalar nada: eles vão receber um link e pronto.
 2. Com o projeto criado, abra **SQL Editor → New query**, cole o conteúdo inteiro do arquivo
    `schema.sql` desta pasta e clique em **Run**. Deve aparecer *Success*.
    Pode rodar de novo quando quiser: o arquivo é feito para isso.
-3. Vá em **Project Settings → API** e copie os dois valores:
-   - **Project URL** (algo como `https://abcdefgh.supabase.co`)
-   - **anon public** (uma chave longa)
+3. Copie os dois valores do projeto:
+   - **Project URL** — algo como `https://abcdefgh.supabase.co`, sem barra no fim.
+     Fica em **Settings → API** (em projetos novos, **Integrations → Data API**).
+   - **A chave pública** — em **Settings → API Keys**.
+     Nos projetos novos ela começa com **`sb_publishable_`**; nos antigos chama-se
+     **anon public** e começa com `eyJ`. Qualquer uma das duas serve.
+
+> ⚠️ **Ao lado dela existe uma chave secreta** (`sb_secret_…` ou *service_role*). Essa **nunca**
+> pode ir para o `config.js`: o arquivo é público no GitHub e ela dá acesso total ao banco.
+> Se você copiar a errada, o app avisa em vermelho na área dos adultos assim que abrir — e aí é
+> gerar uma chave nova no Supabase e trocar.
 
 ### 3.2 Apontar o app para o banco
 
@@ -99,8 +107,8 @@ de segurança que o `schema.sql` criou: **cada família só enxerga os dados da 
 mesmo estando todas no mesmo banco.
 
 > **Deu errado?** Em **Adultos → Sincronizar** há um botão **Testar a conexão**. Ele diz em
-> português o que está faltando — endereço torto, chave incompleta, tabelas não criadas ou
-> projeto pausado.
+> português o que está faltando — endereço torto, chave que não parece do Supabase, tabelas não
+> criadas, projeto pausado ou sem internet.
 
 ### 3.3 Liberar o endereço do app no Supabase
 

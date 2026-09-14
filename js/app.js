@@ -1819,6 +1819,14 @@ function pintarSync(){
     txt.textContent="Sincronização não configurada. Tudo funciona normalmente, mas os dados ficam só neste aparelho. O arquivo LEIA-ME explica, passo a passo, como ligar a sincronização entre os aparelhos da família.";
     return;
   }
+  /* chave errada é urgente: aparece sem precisar clicar em nada */
+  var perigo = SYNC.chavePerigosa ? SYNC.chavePerigosa() : "";
+  if(perigo){
+    var alerta=el("div","perigo");
+    alerta.appendChild(el("b",null,"⚠️ Chave errada no config.js"));
+    alerta.appendChild(el("span",null,perigo));
+    area.appendChild(alerta);
+  }
   botaoDiagnostico(area);
   var est=SYNC.estado();
   if(est==="deslogado"){
